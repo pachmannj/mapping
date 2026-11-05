@@ -104,6 +104,7 @@ p = pg.appendFolder('Musicfolder', label='Složka s hudbou (prázdné = ../music
 I(pg, 'Track', 'Skladba č.', 0, 0, 20)
 PU(pg, 'Next', 'Další skladba  [N]')
 F(pg, 'Volume', 'Hlasitost odposlechu', .8, 0, 1)
+p = pg.appendStrMenu('Outputdevice', label='Výstup odposlechu')[0]; p.menuSource = "op('./a_out').par.device"; p.default = p.val = 'default'
 T(pg, 'Monitor', 'Přehrávat demo do repráků', True)
 T(pg, 'Link', 'Ableton Link (tempo z DJ softwaru)', False)
 
@@ -174,7 +175,7 @@ setp(al, 'format', 'stereo'); setp(al, 'ratemode', 'auto')
 sw = mk(SH, switchCHOP, 'a_src', -1200, 380, (af, al)); expr(sw, 'index', "1 if parent().par.Source == 'live' else 0")
 ain = mk(SH, nullCHOP, 'a_in', -1000, 380, (sw,))
 mon = mk(SH, mathCHOP, 'a_mon', -1200, 520, (af,)); expr(mon, 'gain', "parent().par.Volume")
-aout = mk(SH, audiodeviceoutCHOP, 'a_out', -1000, 520, (mon,)); expr(aout, 'active', "parent().par.Source == 'file' and parent().par.Monitor")
+aout = mk(SH, audiodeviceoutCHOP, 'a_out', -1000, 520, (mon,)); setp(aout, 'active', False)          # zapíná engine.devices()
 lk = mk(SH, abletonlinkCHOP, 'link', -1400, 150)
 for n in ('tempo', 'beat'): setp(lk, n, True)
 setp(lk, 'enable', False)

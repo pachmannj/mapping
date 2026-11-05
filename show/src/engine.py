@@ -205,6 +205,7 @@ def ui(now, dt):
 # ─────────────────────────── HLÍDÁNÍ ZAŘÍZENÍ ───────────────────────────
 # Zvukový vstup a kamera se po zapnutí / změně zařízení občas neinicializují → vypnout a o 2 snímky později zapnout.
 # Když živý vstup 5 s nedává žádný signál (vytažená zvukovka, změna zařízení v systému), zkusí se znovu otevřít.
+# Odposlech demo hudby: když se nepřipojí, zkusí to znovu (a z „default“ přejde na první skutečné zařízení).
 def reinit(name, want):
 	o = O(name)
 	o.par.active = False
@@ -225,7 +226,19 @@ def devices(now):
 	key = (cam, P('Cameradevice'))
 	if key != D.get('ckey'):
 		D['ckey'] = key; reinit('cam_in', cam)
-	for name in ('a_live', 'cam_in'):
+	mon = bool(P('Source') == 'file' and P('Monitor'))
+	key = (mon, P('Outputdevice'))
+	if key != D.get('okey'):
+		D['okey'] = key; D['oT'] = now; D['ofb'] = False
+		O('a_out').par.device = P('Outputdevice'); reinit('a_out', mon)
+	elif mon and now - D.get('oT', 0) > 5 and O('a_out').warnings():
+		D['oT'] = now; o = O('a_out')
+		if P('Outputdevice') == 'default' and not D['ofb']:    # „default“ se nepřipojil → první skutečné zařízení
+			names = [n for n, l in zip(o.par.device.menuNames, o.par.device.menuLabels) if n != 'default' and 'Teams' not in l]
+			if names: o.par.device = names[0]; D['ofb'] = True
+		reinit('a_out', True)
+		debug('odposlech se nepřipojil → znovu otevírám', o.par.device.eval())
+	for name in ('a_live', 'cam_in', 'a_out'):
 		r = D.get('re_' + name)
 		if r:
 			n, want = r
