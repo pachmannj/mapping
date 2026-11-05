@@ -222,7 +222,7 @@ def devices(now):
 	elif live and A['silentFor'] > 5 and now - D.get('aT', 0) > 5:
 		D['aT'] = now; reinit('a_live', True)
 		debug('živý vstup bez signálu → znovu otevírám', P('Inputdevice'))
-	cam = bool(P('Camera') or P('Previz') or P('Camtrails'))
+	cam = bool(P('Camera') or P('Previz'))
 	key = (cam, P('Cameradevice'))
 	if key != D.get('ckey'):
 		D['ckey'] = key; reinit('cam_in', cam)

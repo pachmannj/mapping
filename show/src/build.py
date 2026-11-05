@@ -57,8 +57,8 @@ R = op('/project1')
 saved = {}
 old = R.op('show')
 if old:
-	for p in old.customPars:
-		if p.mode == ParMode.CONSTANT and not p.isPulse: saved[p.name] = p.val
+	for p in old.customPars:                 # přenáší se jen nastavení show, ne scén (ty mají vlastní výchozí hodnoty)
+		if p.mode == ParMode.CONSTANT and not p.isPulse and p.page.name in ('Show', 'Audio', 'Mapping', 'Output', 'Camera'): saved[p.name] = p.val
 	try: old.op('projector').par.winclose.pulse()
 	except Exception: pass
 	old.destroy()
@@ -136,25 +136,26 @@ p = pg.appendFile('Previzimage', label='Previz: fotka místa (místo živé kame
 XY(pg, 'Prevtl', 'Previz roh vlevo nahoře', (.3, .75)); XY(pg, 'Prevtr', 'Previz roh vpravo nahoře', (.7, .75))
 XY(pg, 'Prevbl', 'Previz roh vlevo dole', (.3, .3)); XY(pg, 'Prevbr', 'Previz roh vpravo dole', (.7, .3))
 F(pg, 'Prevdim', 'Previz: ztmavení pozadí', .6, 0, 1)
-T(pg, 'Camtrails', 'Krasohled: pohyb z kamery jako stopy', False)
 
 pg = page('Krasohled')
 p = I(pg, 'Lobes', 'Laloky (0 = auto)', 0, 0, 12); p.clampMin = p.clampMax = True; p.min, p.max = 0, 12
-F(pg, 'Relief', 'Reliéf', 2, .2, 3); F(pg, 'Ripple', 'Zvlnění', .5, 0, 2)
-I(pg, 'Density', 'Hustota sítě', 200, 80, 320)
-F(pg, 'Kspeed', 'Rychlost', 1, 0, 2)
-T(pg, 'Moire', 'Moaré (druhá síť)', True)
-F(pg, 'Particles', 'Částice', 1, 0, 3); F(pg, 'Feedback', 'Stopy', 1, 0, 1.3); F(pg, 'Bloom', 'Záře', 1, 0, 2); F(pg, 'Kaleido', 'Krasohled', 1, 0, 1)
-M(pg, 'Kscene', 'Vnitřní scéna', ['auto', 'clean', 'tunnel', 'prism', 'storm'], ['Auto (režisér)', 'Čistá síť', 'Tunel', 'Hranol', 'Bouře'], 'auto')
-T(pg, 'Kstrobe', 'Záblesk na dropu', False)
+F(pg, 'Relief', 'Hloubka laloků', .5, 0, 1.5); F(pg, 'Ktwist', 'Zkroucení tunelu', .15, 0, 1)
+F(pg, 'Ripple', 'Šum', 1, 0, 3); F(pg, 'Klength', 'Délka tunelu', 8, 2, 20); F(pg, 'Kspeed', 'Rychlost', 1, 0, 3)
+p = I(pg, 'Kaleido', 'Zrcadla (0–5)', 3, 0, 5); p.clampMin = p.clampMax = True; p.min, p.max = 0, 5
+F(pg, 'Feedback', 'Stopy', 1, 0, 1.1); F(pg, 'Bloom', 'Záře', 1, 0, 2); F(pg, 'Ksize', 'Velikost bodů (px)', 2, .5, 6); F(pg, 'Kbright', 'Jas', 1, 0, 3)
 
 pg = page('Vortex')
-F(pg, 'Vbright', 'Jas', 2.5, 0, 5); F(pg, 'Vsize', 'Velikost teček', 1.3, .2, 3); F(pg, 'Vtrails', 'Stopy', 1, 0, 3)
-F(pg, 'Vturb', 'Turbulence', 1, 0, 3); F(pg, 'Vzoom', 'Vzdálenost kamery', .7, .4, 2)
+I(pg, 'Vcount', 'Max. částic', 200000, 20000, 600000); F(pg, 'Vbirth', 'Rychlost zrodu', 1, 0, 3)
+F(pg, 'Vbright', 'Jas', 1.5, 0, 5); F(pg, 'Vsize', 'Velikost částic', 2, .5, 8); F(pg, 'Vtrails', 'Stopy', 1, 0, 1.1)
+F(pg, 'Vturb', 'Turbulence', 1, 0, 3); F(pg, 'Vzoom', 'Vzdálenost kamery', .65, .4, 2)
 
-pg = page('Echoes / Heat')
-F(pg, 'Espacing', 'Echoes: rozestup teček (px)', 10, 4, 30); F(pg, 'Ebright', 'Echoes: jas', 1, 0, 2)
-F(pg, 'Hrows', 'Heat: řad cihel', 40, 10, 100); F(pg, 'Hbright', 'Heat: jas', .9, 0, 2)
+pg = page('Echoes')
+F(pg, 'Epixel', 'Pixelace (krok)', .03, 0, .15); F(pg, 'Edisp', 'Posunutí (displace)', .12, 0, .5)
+F(pg, 'Etrails', 'Ozvěny (stopy)', .7, 0, .97); F(pg, 'Ebright', 'Jas', 1, 0, 2)
+
+pg = page('Heat')
+F(pg, 'Hlife', 'Životnost bodů (s)', 8, 1, 25); F(pg, 'Hflow', 'Proudění', 1, 0, 3); F(pg, 'Hrise', 'Stoupání tepla', 1, 0, 3)
+F(pg, 'Hrows', 'Řad cihel', 40, 10, 100); F(pg, 'Hsize', 'Velikost bodů (px)', 2.4, .5, 6); F(pg, 'Hbright', 'Jas', 1.8, 0, 4)
 
 for n, v in saved.items():
 	if hasattr(SH.par, n):
@@ -238,113 +239,13 @@ cam = mk(SH, videodeviceinTOP, 'cam_in', -1400, -1100)
 setp(cam, 'active', False)                                                    # zapíná engine.devices()
 expr(cam, 'device', "parent().par.Cameradevice")
 
-# ─────────────── scéna: KRASOHLED ───────────────
-K = mk(SH, baseCOMP, 'krasohled', -1100, 0)
-vert = textfile(K, 'krasohled_vert', GL + '/krasohled_vert.glsl', -800, -300)
-pix = textfile(K, 'krasohled_pixel', GL + '/krasohled_pixel.glsl', -800, -420)
-UN = ['uA', 'uB', 'uC', 'uD', 'uE', 'uF', 'uG', 'uL0', 'uL1', 'uL2']
-def kmat(name, y):
-	m = mk(K, glslMAT, name, -600, y); m.par.vdat = vert; m.par.pdat = pix
-	uniforms(m, UN)
-	setp(m, 'blending', True); setp(m, 'srcblend', 'one'); setp(m, 'destblend', 'one')
-	setp(m, 'depthtest', False); setp(m, 'depthwriting', False)
-	return m
-ma, mb = kmat('mat_a', -250), kmat('mat_b', -380)
-def kgeo(name, mat, y):
-	g = mk(K, geometryCOMP, name, -200, y)
-	for c in list(g.children): c.destroy()
-	gr = g.create(gridSOP, 'grid')
-	setp(gr, 'orient', 'xy'); setp(gr, 'sizex', 2.1); setp(gr, 'sizey', 2.1)
-	expr(gr, 'rows', "op('/project1/show').par.Density"); expr(gr, 'cols', "op('/project1/show').par.Density")
-	setp(gr, 'type', 'poly'); setp(gr, 'surftype', 'rowcol')
-	gr.render = True; gr.display = True
-	g.par.material = mat.path
-	return g
-kgeo('geo_a', ma, -250); kgeo('geo_b', mb, -380)
-kc = mk(K, cameraCOMP, 'cam', -200, -520); setp(kc, 'projection', 'ortho'); kc.par.tz = 5
-# GPU částice
-seed = mk(K, constantTOP, 'psim_seed', -800, -700)
-setp(seed, 'outputresolution', 'custom'); setp(seed, 'resolutionw', 256); setp(seed, 'resolutionh', 256); setp(seed, 'format', 'rgba32float')
-setp(seed, 'colorr', 99); setp(seed, 'colorg', 99); setp(seed, 'colorb', 0); setp(seed, 'alpha', 0)
-pfb = mk(K, feedbackTOP, 'psim_fb', -600, -700, (seed,))
-ps = glsl(K, 'psim', 'krasohled_particles.glsl', -400, -700, ('uP0', 'uP1', 'uP2'), (pfb,), 'rgba32float')
-setp(ps, 'outputresolution', 'custom'); setp(ps, 'resolutionw', 256); setp(ps, 'resolutionh', 256)
-pfb.par.top = ps
-gp = mk(K, geometryCOMP, 'geo_p', -200, -700)
-for c in list(gp.children): c.destroy()
-rect = gp.create(rectangleSOP, 'sprite'); rect.par.sizex = .007; rect.par.sizey = .007; rect.render = rect.display = True
-setp(gp, 'instancing', True); gp.par.instanceop = ps
-for a_, c_ in (('instancetx', 'r'), ('instancety', 'g'), ('instancesx', 'a'), ('instancesy', 'a'), ('instancesz', 'a')): setp(gp, a_, c_)
-mp = mk(K, constantMAT, 'mat_p', -400, -850)
-for n, v in (('blending', True), ('srcblend', 'one'), ('destblend', 'one'), ('depthtest', False), ('depthwriting', False)): setp(mp, n, v)
-gp.par.material = mp
-rend = mk(K, renderTOP, 'render1', 0, -300)
-rend.par.camera = kc.path; rend.par.geometry = 'geo_a geo_b geo_p'
-res(rend, 'rgba16float'); setp(rend, 'antialias', 'aa4')
-setp(rend, 'bgcolorr', 0); setp(rend, 'bgcolorg', 0); setp(rend, 'bgcolorb', 0); setp(rend, 'bgcolora', 1)
-base = mk(K, nullTOP, 'base', 200, -450, (rend,))
-# pohyb z kamery
-csel = mk(K, selectTOP, 'cam_sel', -800, -1000); csel.par.top = cam.path
-csm = mk(K, resolutionTOP, 'cam_small', -600, -1000, (csel,))
-setp(csm, 'outputresolution', 'custom'); setp(csm, 'resolutionw', 320); setp(csm, 'resolutionh', 180)
-cpv = mk(K, feedbackTOP, 'cam_prev', -400, -1050, (csm,)); cpv.par.top = csm
-cmo = glsl(K, 'cam_motion', 'krasohled_motion.glsl', -200, -1000, (), (csm, cpv))
-# zpětná vazba, záře, post
-fbi = mk(K, feedbackTOP, 'fb_in', 400, -450, (base,))
-fp = glsl(K, 'fb_proc', 'krasohled_feedback.glsl', 600, -450, ('uF0', 'uF1', 'uF2'), (fbi, base, cmo))
-fbi.par.top = fp
-bl = mk(K, levelTOP, 'bloom_lvl', 800, -600, (base,))
-bb = mk(K, blurTOP, 'bloom_blur', 1000, -600, (bl,)); setp(bb, 'size', 28)
-post = glsl(K, 'post', 'krasohled_post.glsl', 1000, -450, ('uQ0', 'uQ1', 'uQ2'), (base, bb, fp))
-mk(K, nullTOP, 'out1', 1200, -450, (post,))
-
-# ─────────────── scéna: VORTEX ───────────────
-V = mk(SH, baseCOMP, 'vortex', -1100, -150)
-PW, PH = 320, 256
-init = mk(V, constantTOP, 'init', -800, 200)
-setp(init, 'outputresolution', 'custom'); setp(init, 'resolutionw', PW); setp(init, 'resolutionh', PH); setp(init, 'format', 'rgba32float')
-for n in ('colorr', 'colorg', 'colorb', 'alpha'): setp(init, n, 0)
-fpos = mk(V, feedbackTOP, 'fbpos', -600, 260, (init,))
-fvel = mk(V, feedbackTOP, 'fbvel', -600, 120, (init,))
-sim = glsl(V, 'sim', 'vortex_sim.glsl', -400, 200, ['uS%d' % i for i in range(11)], (fpos, fvel), 'rgba32float')
-setp(sim, 'numcolorbufs', 2)
-vel = mk(V, renderselectTOP, 'vel', -200, 120); vel.par.top = sim; setp(vel, 'bufferindex', 1); setp(vel, 'format', 'rgba32float')
-fpos.par.top = sim; fvel.par.top = vel
-org = mk(V, nullCOMP, 'origin', 0, -200)
-vc = mk(V, cameraCOMP, 'cam', 0, -350)
-setp(vc, 'viewanglemethod', 'vertfov'); setp(vc, 'fov', 60.16); setp(vc, 'near', .1); setp(vc, 'far', 100); vc.par.lookat = org; vc.par.tz = 4.5
-vv = textfile(V, 'vert_dat', GL + '/vortex_vert.glsl', -400, -100)
-vp = textfile(V, 'pixel_dat', GL + '/vortex_pixel.glsl', -400, -230)
-def vmat(name, y):
-	m = mk(V, glslMAT, name, -200, y); m.par.vdat = vv; m.par.pdat = vp
-	uniforms(m, ['uV0', 'uV1'])
-	m.seq.sampler.numBlocks = 2
-	setp(m, 'sampler0name', 'sPos'); m.par.sampler0top = sim
-	setp(m, 'sampler1name', 'sVel'); m.par.sampler1top = vel
-	for n, v in (('blending', True), ('srcblend', 'one'), ('destblend', 'one'), ('depthtest', False), ('depthwriting', False), ('cullface', 'neither')): setp(m, n, v)
-	return m
-def vgeo(name, mat, y):
-	g = mk(V, geometryCOMP, name, 200, y)
-	for c in list(g.children): c.destroy()
-	r = g.create(rectangleSOP, 'quad'); r.par.sizex = 1; r.par.sizey = 1; r.render = r.display = True
-	setp(g, 'instancing', True); setp(g, 'instancecountmode', 'manual'); setp(g, 'numinstances', PW * PH)
-	g.par.material = mat
-	return g
-vgeo('geo_dots', vmat('mat_dots', -100), -100); vgeo('geo_trails', vmat('mat_trails', -250), -250)
-vr = mk(V, renderTOP, 'render', 400, -150)
-vr.par.camera = vc.path; vr.par.geometry = 'geo_trails geo_dots'
-res(vr, 'rgba16float')
-setp(vr, 'bgcolorr', 0); setp(vr, 'bgcolorg', 0); setp(vr, 'bgcolorb', 0); setp(vr, 'bgcolora', 1)
-vco = glsl(V, 'compose', 'vortex_compose.glsl', 600, -150, ['uC0'], (vr,))
-mk(V, nullTOP, 'out1', 800, -150, (vco,))
-
-# ─────────────── scény: ECHOES a HEAT ───────────────
-E_ = mk(SH, baseCOMP, 'echoes', -1100, -300)
-eg = glsl(E_, 'glsl', 'echoes.glsl', 0, 0, ['uE0', 'uE1', 'uE2'] + ['uR%d' % i for i in range(8)])
-mk(E_, nullTOP, 'out1', 200, 0, (eg,))
-H_ = mk(SH, baseCOMP, 'heat', -1100, -450)
-hg = glsl(H_, 'glsl', 'heat.glsl', 0, 0, ['uH0', 'uH1'] + ['uR%d' % i for i in range(8)])
-mk(H_, nullTOP, 'out1', 200, 0, (hg,))
+# ─────────────── scény (src/build_scenes.py) ───────────────
+exec(open(SRC + '/build_scenes.py', encoding='utf-8').read())
+SKIP = globals().get('SKIP_SCENES', ())                         # ladění: scény, které se mají vynechat
+for nm, fn in (('krasohled', build_krasohled), ('vortex', build_vortex), ('echoes', build_echoes), ('heat', build_heat)):
+	if nm in SKIP:
+		X = mk(SH, baseCOMP, nm, -1100, 0); mk(X, constantTOP, 'out1', 0, 0)
+	else: fn(SH)
 
 # ─────────────── mix scén, master, mapování ───────────────
 outs = []

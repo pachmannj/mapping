@@ -1,12 +1,14 @@
-# SCÉNA ECHOES — tečkový rastr (port z echoes_index.html)
-# kopák = vlna ze středu, virbl = vlna z náhodného místa, basa = vlnění kolem bloudícího bodu, výšky = rychlost šumu
+# SCÉNA ECHOES 2.0 — bílé linky z pole ozvěn: Edge ×5 → feedback → Limit (pixelace) → Displace → Edge → feedback se zoomem
+# (podle Daniel Steenhoff „Realtime White Visuals“). Z webu zůstává logika: kopák = ozvěna ze středu,
+# virbl = ozvěna z náhodného místa, basa = vlnění kolem bloudícího bodu, výšky = rychlost šumu.
 import math, random
 
 SHOW = '/project1/show'
-G = '/project1/show/echoes/glsl'
+E = '/project1/show/echoes'
 S = {}
 
 def P(name): return getattr(op(SHOW).par, name).eval()
+def e(name): return op(E + '/' + name)
 
 def num(x):
 	# TD 2025.33230 převádí subnormální čísla (např. doznívající záblesk 5e-324) na 1.8e308 → bílý obraz; NaN/inf taky pryč
@@ -18,30 +20,46 @@ def setv(o, i, v):
 	getattr(p, 'vec%dvaluex' % i).val, getattr(p, 'vec%dvaluey' % i).val = num(v[0]), num(v[1])
 	getattr(p, 'vec%dvaluez' % i).val, getattr(p, 'vec%dvaluew' % i).val = num(v[2]), num(v[3])
 
-def add_pulse(x, y, amp):
-	S['pulses'].append([x, y, 0.0, amp]); S['pulses'] = S['pulses'][-8:]
+def add_ring(x, y, amp):
+	S['rings'].append([x, y, 0.0, amp]); S['rings'] = S['rings'][-8:]
 
 def update(A, dt, now):
-	g = op(G); W, H = g.width, g.height
-	if not S: S.update(dict(t=0.0, wt=0.0, hue=random.random(), pulses=[], idle=0.0, gate=.3, bright=1.0))
-	on = A['on']; R = P('Reactivity'); b = A['bands']
-	S['t'] += dt * (.6 + (b['air'] * 1.2 + A['hatEnv'] * .8) * R if on else .5)
+	if not S: S.update(dict(t=0.0, tx=0.0, wt=0.0, rings=[], idle=0.0, rot=0.0, rotV=0.0, pix=0.0, zoom=0.0))
+	on = A['on']; R = P('Reactivity'); b = A['bands']; B = A['busy'] if on else 0
+	S['t'] += dt * (.1 + (b['air'] * .25 + A['hatEnv'] * .2) * R * on)        # z videa: tz = absTime/10, tx = absTime/100
+	S['tx'] += dt * .01
 	S['wt'] += dt
-	if A['kickHit']: add_pulse(W * .5, H * .5, (.5 + A['kickHit'] * .7) * R)
-	if A['snareHit']: add_pulse(W * random.uniform(.15, .85), H * random.uniform(.2, .8), (.4 + A['snareHit'] * .5) * R)
-	if not on:                                              # bez zvuku občas samo „kápne“
+	if A['kickHit']: add_ring(0.0, 0.0, (.6 + A['kickHit'] * .6) * R); S['zoom'] = max(S['zoom'], A['kickHit'] * R)
+	if A['snareHit']:
+		add_ring(random.uniform(-.7, .7), random.uniform(-.4, .4), (.5 + A['snareHit'] * .5) * R)
+		S['pix'] = max(S['pix'], A['snareHit'] * R)
+		S['rotV'] += (1 if random.random() < .5 else -1) * A['snareHit'] * .6 * R
+	if not on:
 		S['idle'] -= dt
-		if S['idle'] <= 0: add_pulse(W * random.uniform(.2, .8), H * random.uniform(.2, .8), .6); S['idle'] = random.uniform(1.5, 3.5)
-	for p in S['pulses']: p[2] += dt
-	S['pulses'] = [p for p in S['pulses'] if p[2] < 5]
+		if S['idle'] <= 0: add_ring(random.uniform(-.6, .6), random.uniform(-.35, .35), .7); S['idle'] = random.uniform(1.5, 3.5)
+	for r in S['rings']: r[2] += dt
+	S['rings'] = [r for r in S['rings'] if r[2] < 4]
 	t = S['wt']
-	mx = W * (.5 + .32 * math.sin(t * .23) + .1 * math.sin(t * .71)); my = H * (.5 + .3 * math.cos(t * .19))
-	wave = (b['sub'] * .4 + b['kick'] * .3) * R if on else .25
-	gt = (.42 - A['busy'] * .2) if on else .45                # tiché pasáže = méně teček, plné = víc
-	S['gate'] += (gt - S['gate']) * (1 - math.exp(-dt * 1.5))
-	S['hue'] += dt * (.01 + A['centroid'] * .03)
-	setv(g, 0, (S['t'], P('Espacing'), P('Ebright') * (1 + A['kickEnv'] * .3 * R), S['gate']))
-	setv(g, 1, (mx, my, wave, t))
-	setv(g, 2, (S['hue'], 1.0 if P('Colour') else 0.0, 1.2 + A['energy'] * .4, 0))
+	mx = .5 + .32 * math.sin(t * .23) + .1 * math.sin(t * .71); my = .5 + .3 * math.cos(t * .19)
+	g = e('field')
+	setv(g, 0, (S['t'], 1.4, 4.5, 1.1))                                 # hladké pole: perioda jako ve videu
+	setv(g, 1, (mx, my, (b['sub'] * .35 + b['kick'] * .25) * R * on, t))
+	setv(g, 2, (S['tx'], 0, 0, 0))
 	for i in range(8):
-		setv(g, 3 + i, S['pulses'][i] if i < len(S['pulses']) else (0, 0, 0, 0))
+		setv(g, 3 + i, S['rings'][i] if i < len(S['rings']) else (0, 0, 0, 0))
+	# pixelace: krok kvantizace vyskočí na virbl a dozní (z videa: Limit TOP → Quantize Position → Round)
+	S['pix'] *= math.exp(-dt * 4)
+	step = P('Epixel') * (1 + S['pix'] * 2.5 + B * .8)
+	e('limit').par.quantpos = 'round' if step > .001 else 'off'
+	e('limit').par.posstep = max(step, .001)
+	d = P('Edisp') * (1 + (b['low'] * .6 + A['kickEnv'] * .8) * R * on)
+	e('displace').par.displaceweightx = d; e('displace').par.displaceweighty = d
+	# druhá ozvěna: zoom 0,99 z videa, kopák ji krátce „nadechne“, virbl pootočí
+	S['zoom'] *= math.exp(-dt * 5)
+	S['rotV'] *= math.exp(-dt * 2); S['rot'] += S['rotV'] * dt * 20
+	xf = e('fb2_xf').par
+	xf.sx = xf.sy = .99 - S['zoom'] * .02
+	xf.rotate = S['rot'] * .15
+	e('fb2_lvl').par.opacity = P('Etrails')
+	e('fb1_lvl').par.brightness1 = .9
+	e('out_lvl').par.brightness1 = P('Ebright') * (1 + A['kickEnv'] * .3 * R * on)

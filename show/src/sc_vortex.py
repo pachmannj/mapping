@@ -1,4 +1,5 @@
-# SCÉNA VORTEX — organismus z ~80 000 částic (port z index (kopie 3).html „Vortex Organism“)
+# SCÉNA VORTEX 2.0 — organismus ze statisíců POP částic zrozených ze zvukové vlny (podle nicholaspjm „Audio Reactive Particles using POPs“)
+# Logika chování je z webového Vortex Organism; síly počítá GLSL POP v src/glsl/vortex_forces.glsl.
 # Stavový automat chování (drift / tension / flare / fragment / reform) řízený nástroji, kamera obíhá kolem.
 import math, random
 
@@ -103,16 +104,19 @@ def update(A, dt, now):
 		S['bright'] = max(.5, min(3., S['bright'] + (tb - S['bright']) * k(dt, .4 if tb > S['bright'] else .06)))
 	else:
 		S['density'] += (1.1 - S['density']) * k(dt, .02); S['turb'] += (.8 - S['turb']) * k(dt, .02); S['bright'] += (1.4 - S['bright']) * k(dt, .02)
-	sim = v('sim'); B = S['blend']
-	setv(sim, 0, (t, dt, energy, s['trans']))
-	setv(sim, 1, (s['kick'], s['snare'], s['hihat'], s['cymbal']))
-	setv(sim, 2, (s['vocal'], s['sub'], S['sust'], S['rhythm']))
-	setv(sim, 3, (kickT, snareT, hihatT, S['auto']))
-	setv(sim, 4, (S['turb'] * P('Vturb'), S['density'], R, comp))
-	setv(sim, 5, (B[0], B[1], B[2], B[3]))
-	S['frame'] = S.get('frame', 0) + 1
-	setv(sim, 6, (B[4], S['frame'] % 1000000, 0, 0))
-	setv(sim, 7, v0); setv(sim, 8, v1); setv(sim, 9, v2); setv(sim, 10, cc)
+	f = v('geo/forces'); B = S['blend']                       # GLSL POP se silami uvnitř smyčky Particle POP
+	setv(f, 0, (t, dt, energy, s['trans']))
+	setv(f, 1, (s['kick'], s['snare'], s['hihat'], s['cymbal']))
+	setv(f, 2, (s['vocal'], s['sub'], S['sust'], S['rhythm']))
+	setv(f, 3, (kickT, snareT, hihatT, S['auto']))
+	setv(f, 4, (S['turb'] * P('Vturb'), S['density'], R, comp))
+	setv(f, 5, (B[0], B[1], B[2], B[3]))
+	setv(f, 6, (B[4], S['warmth'], S['intensity'], S['bright'] * P('Vbright') * .5))
+	setv(f, 7, v0[:3] + (P('Vsize'),)); setv(f, 8, v1); setv(f, 9, v2); setv(f, 10, cc)
+	# ── zrod částic ze zvukové vlny: víc hudby = víc částic ──
+	pp = v('geo/particles').par
+	pp.maxparticles = int(P('Vcount'))
+	pp.birthrate = P('Vcount') / 4.0 * P('Vbirth') * (.35 + (energy * 1.5 + kickT * .5) * on)
 	# ── kamera ──
 	camSpeed = .03 + S['intensity'] * .12 + s['bass'] * .08
 	S['camA'] += dt * camSpeed
@@ -120,11 +124,7 @@ def update(A, dt, now):
 	r = (4.5 + math.sin(t * .08) * .4 - S['intensity']) * P('Vzoom')
 	c = v('cam').par
 	c.tx, c.ty, c.tz = math.cos(S['camA']) * r, S['camY'], math.sin(S['camA']) * r
-	rend = v('render'); res = (rend.width, rend.height)
-	for name, mode in (('mat_dots', 0), ('mat_trails', 1)):
-		setv(v(name), 0, (S['warmth'], S['intensity'], mode, P('Vsize')))
-		setv(v(name), 1, (res[0], res[1], 1.5 / 60 * P('Vtrails'), 0))
-	setv(v('compose'), 0, (S['bright'] * P('Vbright'), S['warmth'], t, S['intensity']))
-	v('geo_trails').render = P('Vtrails') > 0.01
+	v('fb_lvl').par.opacity = min(.93, .85 * P('Vtrails') * (1 - S['blend'][2] * .25))
+	setv(v('compose'), 0, (S['bright'] * .7, S['warmth'], t, S['intensity']))
 
 def state_name(): return NAMES[S['cur']] if S else ''

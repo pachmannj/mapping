@@ -15,3 +15,6 @@ show/_dev/out.txt
 
 # TDMCP (Derivative) se nesmí šířit dál — stáhni si ho z github.com/TouchDesigner/TDMCP/releases
 show/tdmcp/
+
+# automatické zálohy TouchDesigneru po pádu
+show/CrashAutoSave.*
