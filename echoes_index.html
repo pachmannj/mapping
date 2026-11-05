@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <title>Echoes</title>
+  <style>
+    /* Celá stránka bez okrajů a canvas na plnou velikost */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: black;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    /**
+     * Kompletní HTML/CSS/JS kód pro interaktivní pixlové vzory,
+     * které se vlní jako voda při pohybu myši a vytvářejí kruhové vlny při kliknutí.
+     * Vzory jsou generovány pomocí Perlinova šumu a doplněny o ripple efekty.
+     * Autor kódu: ChatGPT
+     */
+
+    // ------------------------------------------------------------
+    // 1) PERLINŮV ŠUM – implementace Ken Perlin
+    // ------------------------------------------------------------
+    (function() {
+      // Permutační tabulka pro Perlinův šum (standardní 256-prvková).
+      const permutation = [
+        151,160,137,91,90,15,
+        131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,
+        8,99,37,240,21,10,23,190,6,148,247,120,234,75,0,26,
+        197,62,94,252,219,203,117,35,11,32,57,177,33,88,237,149,
+        56,87,174,20,125,136,171,168,68,175,74,165,71,134,139,48,
+        27,166,77,146,158,231,83,111,229,122,60,211,133,230,220,105,
+        92,41,55,46,245,40,244,102,143,54,65,25,63,161,1,216,
+        80,73,209,76,132,187,208,89,18,169,200,196,135,130,116,188,
+        159,86,164,100,109,198,173,186,3,64,52,217,226,250,124,123,
+        5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,
+        58,17,182,189,28,42,223,183,170,213,119,248,152,2,44,154,
+        163,70,221,153,101,155,167,43,172,9,129,22,39,253,19,98,
+        108,110,79,113,224,232,178,185,112,104,218,246,97,228,251,34,
+        242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,
+        239,107,49,192,214,31,181,199,106,157,184,84,204,176,115,121,
+        50,45,127,4,150,254,138,236,205,93,222,114,67,29,24,72,
+        243,141,128,195,78,66,215,61,156,180
+      ];
+      // p je dvakrát větší (duplicujeme)
+      const p = new Uint8Array(512);
+      for (let i = 0; i < 256; i++) {
+        p[i] = permutation[i];
+        p[256 + i] = permutation[i];
+      }
+
+      // Fade funkce
+      function fade(t) {
+        return t * t * t * (t * (t * 6 - 15) + 10);
+      }
+      // Lineární interpolace
+      function lerp(t, a, b) {
+        return a + t * (b - a);
+      }
+      // Gradient funkce pro 2D
+      function grad(hash, x, y) {
+        const h = hash & 3;        // &3 => 0,1,2,3
+        const u = h < 2 ? x : y;
+        const v = h < 2 ? y : x;
+        return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+      }
+
+      // 2D Perlinův šum: vrací hodnotu v rozsahu [-1, 1]
+      window.perlin2 = function(x, y) {
+        // Najdeme příslušné mřížkové body
+        const X = Math.floor(x) & 255;
+        const Y = Math.floor(y) & 255;
+        // Koord. uvnitř buňky
+        const xf = x - Math.floor(x);
+        const yf = y - Math.floor(y);
+        // Fade hodnoty
+        const u = fade(xf);
+        const v = fade(yf);
+
+        // Hashy pro 4 vrcholy buňky
+        const aa = p[p[X] + Y];
+        const ab = p[p[X] + Y + 1];
+        const ba = p[p[X + 1] + Y];
+        const bb = p[p[X + 1] + Y + 1];
+
+        // Interpolace mezi gradienty
+        const x1 = lerp(u, grad(aa, xf    , yf    ), grad(ba, xf - 1, yf    ));
+        const x2 = lerp(u, grad(ab, xf    , yf - 1), grad(bb, xf - 1, yf - 1));
+        return lerp(v, x1, x2);
+      };
+    })();
+    // ============================================================
+
+    // ------------------------------------------------------------
+    // 2) NASTAVENÍ CANVAS A PROMĚNNÉ PRO ANIMACI
+    // ------------------------------------------------------------
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Změna velikosti canvasu na plnou obrazovku
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      // Po změně velikosti recompute počet sloupců/řádků
+      cols = Math.ceil(canvas.width / spacing);
+      rows = Math.ceil(canvas.height / spacing);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // Parametry gridu (rozestup pixelů)
+    let spacing = 8;           // vzdálenost mezi "body" (pixely)
+    let cols, rows;
+    resizeCanvas();
+
+    // Ukládání pulzů z kliknutí
+    const pulses = []; // každý pulse: { x, y, time }
+
+    // Pozice myši
+    let mouseX = -9999;
+    let mouseY = -9999;
+
+    // ------------------------------------------------------------
+    // 3) PARAMETRY EFECTŮ
+    // ------------------------------------------------------------
+    // Perlin šum
+    const noiseScale = 0.002;   // měřítko Perlinova šumu
+    const noiseTimeScale = 0.2; // rychlost času ve šumu
+
+    // Ripple z kliknutí
+    const pulseSpeed = 200;    // px/s – rychlost vlny
+    const pulseFreq  = 0.05;   // frekvence vlnění (rad/pixel)
+    const pulseAmp   = 1.0;    // amplituda vlny
+    const pulseDamp  = 0.003;  // útlum podle vzdálenosti (exp(-d * pulseDamp))
+    const pulseDecay = 1.0;    // útlum v čase (exp(-t0 * pulseDecay))
+
+    // Nepravidelné vlnky z pohybu myši
+    const mouseAmp     = 0.6;     // síla vlny způsobené myší
+    const mouseFreq    = 0.02;    // frekvenční koeficient pro wave z myši
+    const mouseSpeed   = 150;     // rychlost šíření vlny z myši (px/s)
+    const mouseDamp    = 0.002;   // útlum podle vzdálenosti od myši
+
+    // Maximální poloměr bodu
+    const maxRadius = spacing * 0.5;
+
+    // Časovač
+    let startTime = performance.now();
+
+    // ------------------------------------------------------------
+    // 4) UDÁLOSTI MYŠI
+    // ------------------------------------------------------------
+    // Pohyb myši
+    canvas.addEventListener('mousemove', function(event) {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = event.clientX - rect.left;
+      mouseY = event.clientY - rect.top;
+    });
+    // Když myš opustí canvas, posuneme koordináty pryč
+    canvas.addEventListener('mouseleave', function() {
+      mouseX = -9999;
+      mouseY = -9999;
+    });
+    // Kliknutí přidá pulse
+    canvas.addEventListener('mousedown', function(event) {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      pulses.push({
+        x: x,
+        y: y,
+        time: performance.now()
+      });
+      // Omez počet pulzů, aby se nezahltil paměť
+      if (pulses.length > 20) {
+        pulses.shift();
+      }
+    });
+
+    // ------------------------------------------------------------
+    // 5) HLAVNÍ SMYČKA NAKRESLENÍ
+    // ------------------------------------------------------------
+    function animate() {
+      const now = performance.now();
+      const t = (now - startTime) / 1000; // v sekundách
+
+      // Vymažeme canvas
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Nastavíme styl kreslení bodu
+      ctx.fillStyle = 'white';
+
+      // Pro každý bod gridu spočteme pozici a hodnoty šumu + ripple
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          const px = i * spacing + spacing * 0.5;
+          const py = j * spacing + spacing * 0.5;
+
+          // 1) Perlinův šum
+          const nx = px * noiseScale + t * noiseTimeScale;
+          const ny = py * noiseScale + t * noiseTimeScale;
+          let vNoise = perlin2(nx, ny); // [-1,1]
+
+          // Normalizujeme na [0,1]
+          vNoise = (vNoise + 1) * 0.5;
+
+          // 2) Ripple z kliknutí
+          let vPulseTotal = 0;
+          for (let k = 0; k < pulses.length; k++) {
+            const p = pulses[k];
+            const dx = px - p.x;
+            const dy = py - p.y;
+            const d = Math.hypot(dx, dy);
+
+            const t0 = (now - p.time) / 1000; // čas od pulzu
+            if (t0 >= 0) {
+              // f = (d - pulseSpeed * t0) * pulseFreq
+              const arg = (d - pulseSpeed * t0) * pulseFreq;
+              const wave = Math.sin(arg) * pulseAmp
+                            * Math.exp(-d * pulseDamp)
+                            * Math.exp(-t0 * pulseDecay);
+              vPulseTotal += wave;
+            }
+          }
+
+          // 3) Ripple z pohybu myši
+          let vMouse = 0;
+          if (mouseX >= 0 && mouseY >= 0 && mouseX <= canvas.width && mouseY <= canvas.height) {
+            const dxM = px - mouseX;
+            const dyM = py - mouseY;
+            const dM = Math.hypot(dxM, dyM);
+            const argM = (dM - mouseSpeed * t) * mouseFreq;
+            vMouse = Math.sin(argM) * mouseAmp * Math.exp(-dM * mouseDamp);
+          }
+
+          // Celková hodnota
+          let value = vNoise + vPulseTotal + vMouse;
+          // Ořízneme na rozmezí [0,1]
+          if (value < 0) value = 0;
+          if (value > 1) value = 1;
+
+          // Poloměr bodu úměrný hodnotě
+          const radius = value * maxRadius;
+
+          // Pokud je bod příliš malý, lehce ho zvýrazníme minimálním poloměrem
+          const minR = maxRadius * 0.1;
+          const finalR = radius < minR ? minR * value : radius;
+
+          // Kreslíme kruh
+          ctx.beginPath();
+          ctx.arc(px, py, finalR, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Opětovné volání smyčky
+      requestAnimationFrame(animate);
+    }
+
+    // Spustíme animaci
+    requestAnimationFrame(animate);
+    // ============================================================
+  </script>
+</body>
+</html>

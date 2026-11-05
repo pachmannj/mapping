@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <title>Heat</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #000;
+      width: 100%;
+      height: 100%;
+    }
+    #brickCanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      background-color: #000;
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="brickCanvas"></canvas>
+
+  <script>
+    // ------------------------------------------------------------------
+    //  1) SimplexNoise (Stefan Gustavson) – generuje hladký šum
+    // ------------------------------------------------------------------
+    class SimplexNoise {
+      constructor(r) {
+        if (!r) r = Math.random;
+        this.p = new Uint8Array(256);
+        for (let i = 0; i < 256; i++) this.p[i] = i;
+        for (let i = 255; i > 0; i--) {
+          let j = Math.floor(r() * (i + 1));
+          [this.p[i], this.p[j]] = [this.p[j], this.p[i]];
+        }
+        this.perm = new Uint8Array(512);
+        this.permMod12 = new Uint8Array(512);
+        for (let i = 0; i < 512; i++) {
+          this.perm[i] = this.p[i & 255];
+          this.permMod12[i] = this.perm[i] % 12;
+        }
+        this.grad3 = [
+          [1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],
+          [1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],
+          [0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]
+        ];
+      }
+      noise3D(xin, yin, zin) {
+        const grad3 = this.grad3;
+        const permMod12 = this.permMod12;
+        const perm = this.perm;
+        let n0=0, n1=0, n2=0, n3=0;
+        const F3 = 1/3, G3 = 1/6;
+        let s = (xin + yin + zin) * F3;
+        let i = Math.floor(xin + s);
+        let j = Math.floor(yin + s);
+        let k = Math.floor(zin + s);
+        let t = (i + j + k) * G3;
+        let X0 = i - t, Y0 = j - t, Z0 = k - t;
+        let x0 = xin - X0, y0 = yin - Y0, z0 = zin - Z0;
+        let i1, j1, k1, i2, j2, k2;
+        if (x0 >= y0) {
+          if (y0 >= z0)      { i1=1; j1=0; k1=0; i2=1; j2=1; k2=0; }
+          else if (x0 >= z0) { i1=1; j1=0; k1=0; i2=1; j2=0; k2=1; }
+          else               { i1=0; j1=0; k1=1; i2=1; j2=0; k2=1; }
+        } else {
+          if (y0 < z0)       { i1=0; j1=0; k1=1; i2=0; j2=1; k2=1; }
+          else if (x0 < z0)  { i1=0; j1=1; k1=0; i2=0; j2=1; k2=1; }
+          else               { i1=0; j1=1; k1=0; i2=1; j2=1; k2=0; }
+        }
+        let x1 = x0 - i1 + G3, y1 = y0 - j1 + G3, z1 = z0 - k1 + G3;
+        let x2 = x0 - i2 + 2*G3, y2 = y0 - j2 + 2*G3, z2 = z0 - k2 + 2*G3;
+        let x3 = x0 - 1 + 3*G3, y3 = y0 - 1 + 3*G3, z3 = z0 - 1 + 3*G3;
+        let ii = i & 255, jj = j & 255, kk = k & 255;
+        let gi0 = permMod12[ii + perm[jj + perm[kk]]];
+        let gi1 = permMod12[ii + i1 + perm[jj + j1 + perm[kk + k1]]];
+        let gi2 = permMod12[ii + i2 + perm[jj + j2 + perm[kk + k2]]];
+        let gi3 = permMod12[ii + 1 + perm[jj + 1 + perm[kk + 1]]];
+        let t0 = 0.6 - x0*x0 - y0*y0 - z0*z0;
+        if (t0 > 0) {
+          t0 *= t0;
+          n0 = t0 * t0 * (grad3[gi0][0]*x0 + grad3[gi0][1]*y0 + grad3[gi0][2]*z0);
+        }
+        let t1 = 0.6 - x1*x1 - y1*y1 - z1*z1;
+        if (t1 > 0) {
+          t1 *= t1;
+          n1 = t1 * t1 * (grad3[gi1][0]*x1 + grad3[gi1][1]*y1 + grad3[gi1][2]*z1);
+        }
+        let t2 = 0.6 - x2*x2 - y2*y2 - z2*z2;
+        if (t2 > 0) {
+          t2 *= t2;
+          n2 = t2 * t2 * (grad3[gi2][0]*x2 + grad3[gi2][1]*y2 + grad3[gi2][2]*z2);
+        }
+        let t3 = 0.6 - x3*x3 - y3*y3 - z3*z3;
+        if (t3 > 0) {
+          t3 *= t3;
+          n3 = t3 * t3 * (grad3[gi3][0]*x3 + grad3[gi3][1]*y3 + grad3[gi3][2]*z3);
+        }
+        return 32 * (n0 + n1 + n2 + n3);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    //  2) Globální proměnné – šum, kurzor a klikací ripple události
+    // ------------------------------------------------------------------
+    const noise        = new SimplexNoise();
+    let mouseX         = null;
+    let mouseY         = null;
+    let isTouch        = false;
+    const ripples      = []; // pole ripple objektů {x, y, startTime}
+
+    // ------------------------------------------------------------------
+    //  3) Měřítka pro šum a ripple efekty (zpomaleno oproti předchozí verzi)
+    // ------------------------------------------------------------------
+    const noiseScale     = 0.04;  // ponecháno, širší plochy šumu
+    const noiseTimeScale = 0.3;   // snížená rychlost časových změn
+                                  // (původně 0.6, nyní o polovinu pomaleji)
+
+    const rippleWaveLength = 40;   // pixely mezi vlnovými hřebeny (stejně jako dřív)
+    const rippleSpeed      = 2.0;  // menší rychlost šíření ripple (původně 4.0)
+    const rippleAmp        = 0.7;  // amplituda ripple zachována, ale menší rychlost
+    const rippleDecay      = 80;   // útlum vzdálenosti beze změny
+
+    // ------------------------------------------------------------------
+    //  4) Sledování pozice kurzoru / dotyku
+    // ------------------------------------------------------------------
+    window.addEventListener("mousemove", e => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+    window.addEventListener("touchmove", e => {
+      if (e.touches.length > 0) {
+        mouseX = e.touches[0].clientX;
+        mouseY = e.touches[0].clientY;
+        isTouch = true;
+      }
+    });
+    window.addEventListener("mouseout", () => {
+      mouseX = null;
+      mouseY = null;
+      isTouch = false;
+    });
+    window.addEventListener("touchend", () => {
+      mouseX = null;
+      mouseY = null;
+      isTouch = false;
+    });
+
+    // ------------------------------------------------------------------
+    //  5) Posluchač pro kliknutí / ťupnutí – přidá ripple do pole
+    // ------------------------------------------------------------------
+    window.addEventListener("mousedown", e => {
+      ripples.push({ x: e.clientX, y: e.clientY, startTime: performance.now() });
+    });
+    window.addEventListener("touchstart", e => {
+      if (e.touches.length > 0) {
+        ripples.push({ x: e.touches[0].clientX, y: e.touches[0].clientY, startTime: performance.now() });
+      }
+    });
+
+    // ------------------------------------------------------------------
+    //  6) Pomocná funkce: převod jasu [0..1] → HEX odstín šedé
+    // ------------------------------------------------------------------
+    function grayHex(t) {
+      let v = Math.round(t * 255);
+      let h = v.toString(16).padStart(2, "0");
+      return `#${h}${h}${h}`;
+    }
+
+    // ------------------------------------------------------------------
+    //  7) Hlavní vykreslovací funkce – animuje síť pomaleji, ale stále živě
+    // ------------------------------------------------------------------
+    function drawFrame(time) {
+      const canvas = document.getElementById("brickCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = false;
+
+      // 1) Rozměry canvasu
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      canvas.width  = vw;
+      canvas.height = vh;
+
+      // 2) Jedna cihla čtvercová – aspoň 40 na výšku
+      const brickSize = Math.floor(vh / 40);
+
+      // 3) Počet řádků/sloupců pro pokrytí celé plochy
+      const totalRows = Math.ceil(vh / brickSize) + 1;
+      const colsEven   = Math.ceil(vw / brickSize) + 1;
+      const colsOdd    = colsEven + 1;
+
+      // 4) Vyplnění pozadí černě
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, vw, vh);
+
+      // 5) Nastavení obrysu
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 1;
+
+      // 6) Čas v sekundách
+      const t = time * 0.001;
+
+      // 7) Odstranění starých ripple (po 2 sekundách zmizí)
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        if (t - (ripples[i].startTime * 0.001) > 2) {
+          ripples.splice(i, 1);
+        }
+      }
+
+      // 8) Pro každý čtverec v síti vypočteme jas
+      for (let row = 0; row < totalRows; row++) {
+        const isOddRow = (row % 2 === 1);
+        const colsThis = isOddRow ? colsOdd : colsEven;
+        const rowOffsetX = isOddRow ? -brickSize / 2 : 0;
+
+        for (let col = 0; col < colsThis; col++) {
+          // a) Souřadnice a střed cihly
+          const x = rowOffsetX + col * brickSize;
+          const y = row      * brickSize;
+          const centerX = x + brickSize / 2;
+          const centerY = y + brickSize / 2;
+          const colEff = isOddRow ? col - 0.5 : col;
+
+          // b) Hladký Simplex šum v 3D → [−1..1] → [0..1]
+          const nx = colEff * noiseScale;
+          const ny = row * noiseScale;
+          const nz = t * noiseTimeScale;
+          let noiseVal = noise.noise3D(nx, ny, nz);
+          noiseVal = (noiseVal + 1) / 2; // do [0..1]
+
+          // c) Zvýrazníme šum: posuneme k 0.5 a zvětšíme amplitudu na ±0.6
+          let centered = (noiseVal - 0.5) * 1.2; // ∈ [−0.6..+0.6]
+          let noiseOffset = 0.5 + centered;
+          if (noiseOffset < 0) noiseOffset = 0;
+          if (noiseOffset > 1) noiseOffset = 1;
+
+          // d) Ripple od kurzoru
+          let rippleCursor = 0;
+          if (mouseX !== null && mouseY !== null) {
+            const dxC = centerX - mouseX;
+            const dyC = centerY - mouseY;
+            const distC = Math.sqrt(dxC*dxC + dyC*dyC);
+            const waveArgC = distC / rippleWaveLength - t * rippleSpeed;
+            const waveC = Math.cos(waveArgC);
+            const falloffC = Math.exp(- (distC * distC) / (rippleDecay * rippleDecay));
+            rippleCursor = waveC * rippleAmp * falloffC;
+          }
+
+          // e) Ripple od kliknutí (může jich být více)
+          let rippleClick = 0;
+          for (let rp of ripples) {
+            const elapsed = t - (rp.startTime * 0.001);
+            const dxR = centerX - rp.x;
+            const dyR = centerY - rp.y;
+            const distR = Math.sqrt(dxR*dxR + dyR*dyR);
+            const waveArgR = distR / rippleWaveLength - elapsed * rippleSpeed;
+            const waveR = Math.cos(waveArgR);
+            const falloffR = Math.exp(- (distR * distR) / (rippleDecay * rippleDecay));
+            rippleClick += waveR * rippleAmp * falloffR;
+          }
+
+          // f) Kombinujeme šum se všemi ripple efekty
+          let shadeT = noiseOffset + rippleCursor + rippleClick;
+          if (shadeT < 0) shadeT = 0;
+          if (shadeT > 1) shadeT = 1;
+          const fillColor = grayHex(shadeT);
+
+          // g) Vykreslení čtverce (fill + stroke)
+          ctx.fillStyle = fillColor;
+          ctx.fillRect(x, y, brickSize, brickSize);
+          ctx.strokeRect(
+            x + 0.5,
+            y + 0.5,
+            brickSize - 1,
+            brickSize - 1
+          );
+        }
+      }
+
+      // 9) Další snímek animace
+      requestAnimationFrame(drawFrame);
+    }
+
+    // ------------------------------------------------------------------
+    //  10) Spuštění animace a přizpůsobení při změně velikosti
+    // ------------------------------------------------------------------
+    window.addEventListener("load", () => {
+      requestAnimationFrame(drawFrame);
+    });
+    window.addEventListener("resize", () => {
+      // Další snímek se přizpůsobí nové velikosti
+    });
+  </script>
+</body>
+</html>

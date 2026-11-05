@@ -1,0 +1,17 @@
+.DS_Store
+
+# demo hudba: komerční skladby, do repa nepatří (na akci jde zvuk z mixu)
+music/*
+!music/README.md
+
+# TouchDesigner: automatické číslované kopie a zálohy
+show/DJ_Show.*.toe
+show/Backup/
+show/backup/
+
+# vývojový most pro Claude Code (dočasné soubory)
+show/_dev/cmd.py
+show/_dev/out.txt
+
+# TDMCP (Derivative) se nesmí šířit dál — stáhni si ho z github.com/TouchDesigner/TDMCP/releases
+show/tdmcp/

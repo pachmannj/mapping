@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vortex Organism</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; font-family: 'IBM Plex Mono', 'SF Mono', 'Courier New', monospace; }
+canvas { display: block; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; }
+
+/* ── BIOS-style UI ── */
+#panel {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#panel.hidden #panel-body { display: none !important; }
+#panel-tab {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 16px; cursor: pointer; user-select: none;
+  background: rgba(0,0,0,0.7); border-top: 1px solid rgba(255,255,255,0.06);
+}
+#panel-tab span { color: rgba(255,255,255,0.25); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+#panel-tab .key { color: rgba(255,255,255,0.12); font-size: 9px; }
+#panel-body {
+  background: rgba(0,0,0,0.88); padding: 12px 16px 16px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 24px;
+}
+#panel-body label {
+  display: flex; align-items: center; gap: 6px;
+  color: rgba(255,255,255,0.3); font-size: 10px; letter-spacing: 0.5px;
+  white-space: nowrap; min-width: 0;
+}
+#panel-body label span.val { color: rgba(255,255,255,0.5); min-width: 40px; text-align: right; flex-shrink: 0; }
+#panel-body input[type=range] {
+  flex: 1; min-width: 60px; margin: 0 8px; height: 16px; accent-color: rgba(255,255,255,0.3);
+  -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer;
+}
+#panel-body input[type=range]::-webkit-slider-runnable-track {
+  height: 2px; background: rgba(255,255,255,0.08); border-radius: 1px;
+}
+#panel-body input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(255,255,255,0.5); cursor: pointer; margin-top: -4px;
+}
+#panel-body input[type=range]::-moz-range-track {
+  height: 2px; background: rgba(255,255,255,0.08); border-radius: 1px; border: none;
+}
+#panel-body input[type=range]::-moz-range-thumb {
+  width: 10px; height: 10px; border-radius: 50%; border: none;
+  background: rgba(255,255,255,0.5); cursor: pointer;
+}
+.panel-actions { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 4px; }
+.panel-actions button {
+  flex: 1; padding: 6px 12px; cursor: pointer; font-family: inherit; font-size: 9px;
+  text-transform: uppercase; letter-spacing: 1px;
+  background: transparent; color: rgba(255,255,255,0.25);
+  border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s;
+}
+.panel-actions button:hover { color: rgba(255,255,255,0.6); border-color: rgba(255,255,255,0.2); }
+.panel-actions button.active { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.3); }
+
+#overlay {
+  position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.95);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.35); cursor: pointer; transition: opacity 0.6s;
+}
+#overlay h1 { font-size: 14px; font-weight: 400; letter-spacing: 8px; text-transform: uppercase; margin-bottom: 16px; color: rgba(255,255,255,0.5); }
+#overlay p { font-size: 10px; color: rgba(255,255,255,0.15); letter-spacing: 1px; }
+
+#info {
+  position: fixed; top: 12px; left: 16px; z-index: 100;
+  color: rgba(255,255,255,0.12); font-size: 9px; letter-spacing: 0.5px;
+}
+#fps {
+  position: fixed; top: 12px; right: 16px; color: rgba(255,255,255,0.12);
+  font-size: 9px; font-family: inherit; z-index: 100;
+}
+</style>
+</head>
+<body>
+<div id="overlay">
+  <h1>vortex</h1>
+  <p>click to begin</p>
+</div>
+
+<div id="info">calm</div>
+<div id="fps"></div>
+
+<div id="panel" class="hidden">
+  <div id="panel-tab">
+    <span>system</span>
+    <span class="key">[ space ]</span>
+  </div>
+  <div id="panel-body" autocomplete="off">
+    <label>particles <input type="range" id="sCount" min="10000" max="150000" step="5000" value="80000"> <span class="val" id="vCount">80k</span></label>
+    <label>reactivity <input type="range" id="sReact" min="0" max="2" step="0.05" value="1"> <span class="val" id="vReact">1.00</span></label>
+    <label>turbulence <input type="range" id="sTurb" min="0" max="3" step="0.1" value="0.8"> <span class="val" id="vTurb">0.8</span></label>
+    <label>density <input type="range" id="sDens" min="0.2" max="3" step="0.1" value="1.1"> <span class="val" id="vDens">1.1</span></label>
+    <label>brightness <input type="range" id="sBright" min="0.5" max="3" step="0.05" value="1.4"> <span class="val" id="vBright">1.40</span></label>
+    <div class="panel-actions">
+      <button id="btnMic">mic</button>
+      <button id="btnFile">load audio</button>
+      <input type="file" id="fileIn" accept="audio/*" style="display:none">
+    </div>
+    <div class="panel-actions">
+      <button id="btnFreeze">freeze</button>
+      <button id="btnPng">save png</button>
+      <button id="btnSvg">save svg</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="c"></canvas>
+
+<script>
+// ══════════════════════════════════════════════════════
+// VORTEX ORGANISM — WebGL Audio-Reactive Visualization
+// ══════════════════════════════════════════════════════
+
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
+if (!gl) { alert('WebGL2 required'); throw new Error('No WebGL2'); }
+
+// ─── PARAMS ──────────────────────────────────────────
+const P = {
+  count: 80000,
+  reactivity: 1.0,
+  turbulence: 0.8,
+  density: 1.1,
+  brightness: 1.4,
+};
+
+function smoothstepJS(a, b, x) {
+  x = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return x * x * (3 - 2 * x);
+}
+
+// ─── AUDIO SYSTEM ────────────────────────────────────
+const audio = {
+  ctx: null, analyser: null, freq: null, active: false,
+  // Sub-band analysis: kick, snare, hihat, cymbal, vocal, pad
+  subBass: 0, kick: 0, snare: 0, vocal: 0, hihat: 0, cymbal: 0,
+  // Classic bands
+  bass: 0, mids: 0, highs: 0, energy: 0, transient: 0, prevEnergy: 0,
+  sBass: 0, sMids: 0, sHighs: 0, sTrans: 0,
+  // Sub-band smoothed
+  sKick: 0, sSnare: 0, sVocal: 0, sHihat: 0, sCymbal: 0, sSubBass: 0,
+  // Sustained tone detection
+  sustained: 0, sustainedTimer: 0, prevMids: 0,
+  // Transient per-band
+  kickTrans: 0, snareTrans: 0, hihatTrans: 0,
+  prevKick: 0, prevSnare: 0, prevHihat: 0,
+  beat: false, rhythm: 0,
+
+  async init() {
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (this.ctx.state === 'suspended') await this.ctx.resume();
+    this.analyser = this.ctx.createAnalyser();
+    this.analyser.fftSize = 4096; // higher resolution for sub-bands
+    this.analyser.smoothingTimeConstant = 0.5;
+    this.freq = new Uint8Array(this.analyser.frequencyBinCount);
+  },
+  async mic() {
+    if (!this.ctx) await this.init();
+    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    this.ctx.createMediaStreamSource(s).connect(this.analyser);
+    this.active = true;
+  },
+  async file(f) {
+    if (!this.ctx) await this.init();
+    const buf = await this.ctx.decodeAudioData(await f.arrayBuffer());
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf; src.loop = true;
+    src.connect(this.analyser);
+    this.analyser.connect(this.ctx.destination);
+    src.start(0);
+    this.active = true;
+  },
+  update() {
+    if (!this.active) return;
+    this.analyser.getByteFrequencyData(this.freq);
+    const n = this.freq.length;
+    const sr = this.ctx.sampleRate;
+    const binHz = sr / (this.analyser.fftSize);
+
+    // Sub-band boundaries (in bins)
+    // Sub-bass: 20-60Hz (kick body), Kick: 60-150Hz, Snare: 150-400Hz
+    // Vocal: 400-2000Hz, HiHat: 2000-6000Hz, Cymbal: 6000-16000Hz
+    const subBassEnd = Math.floor(60 / binHz);
+    const kickEnd = Math.floor(150 / binHz);
+    const snareEnd = Math.floor(400 / binHz);
+    const vocalEnd = Math.floor(2000 / binHz);
+    const hihatEnd = Math.floor(6000 / binHz);
+    const cymbalEnd = Math.min(n, Math.floor(16000 / binHz));
+
+    function avg(freq, from, to) {
+      let s = 0;
+      for (let i = from; i < to; i++) s += freq[i];
+      return s / ((to - from) * 255);
+    }
+
+    this.subBass = avg(this.freq, 0, subBassEnd);
+    this.kick = avg(this.freq, subBassEnd, kickEnd);
+    this.snare = avg(this.freq, kickEnd, snareEnd);
+    this.vocal = avg(this.freq, snareEnd, vocalEnd);
+    this.hihat = avg(this.freq, vocalEnd, hihatEnd);
+    this.cymbal = avg(this.freq, hihatEnd, cymbalEnd);
+
+    // Classic bands (for backwards compat)
+    this.bass = (this.subBass + this.kick) * 0.5;
+    this.mids = (this.snare + this.vocal) * 0.5;
+    this.highs = (this.hihat + this.cymbal) * 0.5;
+    this.energy = this.bass * 0.4 + this.mids * 0.35 + this.highs * 0.25;
+
+    // Per-band transients (attack detection)
+    this.kickTrans = Math.max(0, (this.kick - this.prevKick) * 6);
+    this.snareTrans = Math.max(0, (this.snare - this.prevSnare) * 5);
+    this.hihatTrans = Math.max(0, (this.hihat - this.prevHihat) * 4);
+    this.prevKick = this.kick;
+    this.prevSnare = this.snare;
+    this.prevHihat = this.hihat;
+
+    // Overall transient
+    const d = this.energy - this.prevEnergy;
+    this.transient = Math.max(0, d * 4);
+    this.prevEnergy = this.energy;
+    this.beat = this.kickTrans > 0.12 || this.snareTrans > 0.1;
+    this.rhythm += this.energy * 0.02;
+
+    // Sustained tone detection: if mids stay high for a while → sustained
+    if (this.vocal > 0.15 && Math.abs(this.vocal - this.prevMids) < 0.03) {
+      this.sustainedTimer += 1/60; // approx frame time
+      this.sustained = Math.min(1, this.sustainedTimer * 0.8); // ramps up over ~1.2s
+    } else {
+      this.sustainedTimer = Math.max(0, this.sustainedTimer - 0.05);
+      this.sustained = Math.min(1, this.sustainedTimer * 0.8);
+    }
+    this.prevMids = this.vocal;
+
+    // Smoothing — fast attack
+    const sf = 0.4;
+    this.sBass += (this.bass - this.sBass) * sf;
+    this.sMids += (this.mids - this.sMids) * sf;
+    this.sHighs += (this.highs - this.sHighs) * sf;
+    this.sTrans += (this.transient - this.sTrans) * 0.5;
+    this.sKick += (this.kick - this.sKick) * 0.5;
+    this.sSnare += (this.snare - this.sSnare) * 0.45;
+    this.sVocal += (this.vocal - this.sVocal) * 0.35;
+    this.sHihat += (this.hihat - this.sHihat) * 0.5;
+    this.sCymbal += (this.cymbal - this.sCymbal) * 0.45;
+    this.sSubBass += (this.subBass - this.sSubBass) * 0.4;
+  }
+};
+
+// ─── BEHAVIOR STATE MACHINE ──────────────────────────
+const behavior = {
+  blend: [1, 0, 0, 0, 0], // calm, tension, burst, collapse, regen
+  current: 0,
+  names: ['drift', 'tension', 'flare', 'fragment', 'reform'],
+  stateTime: 0,
+  intensity: 0,
+  warmth: 0,
+  autoIntensity: 0,
+  autoCyclePhase: 0,
+  autoCycleSpeed: 1.0,
+  compressionCenter: [0, 0, 0],
+  compressionStrength: 0,
+  vortex0: [0, 0, 0],
+  vortex1: [0, 0, 0],
+  vortex2: [0, 0, 0],
+
+  to(s) {
+    if (s === this.current) return;
+    this.current = s;
+    this.stateTime = 0;
+    document.getElementById('info').textContent = this.names[s];
+  },
+  update(dt) {
+    this.stateTime += dt;
+    const t = performance.now() / 1000;
+
+    // ── AUTONOMOUS INTERNAL CYCLE (always running) ──
+    this.autoCyclePhase += dt * 0.025 * this.autoCycleSpeed; // ~40s full cycle
+    // Randomize speed each cycle
+    if (this.autoCyclePhase >= 1.0) {
+      this.autoCyclePhase -= 1.0;
+      this.autoCycleSpeed = 0.7 + Math.random() * 0.7;
+    }
+    const cp = this.autoCyclePhase;
+
+    // Piecewise intensity curve
+    let autoI;
+    if (cp < 0.55)      autoI = 0.08 + 0.17 * smoothstepJS(0.0, 0.55, cp);
+    else if (cp < 0.70) autoI = 0.25 + 0.55 * smoothstepJS(0.55, 0.70, cp);
+    else if (cp < 0.78) autoI = 0.8 + 0.2 * smoothstepJS(0.70, 0.78, cp);
+    else if (cp < 0.88) autoI = 1.0 - 0.65 * smoothstepJS(0.78, 0.88, cp);
+    else                autoI = 0.35 - 0.27 * smoothstepJS(0.88, 1.0, cp);
+    // When audio active: suppress auto-cycle, let music drive everything
+    this.autoIntensity = audio.active ? autoI * 0.05 : autoI;
+
+    // Wandering vortex centers
+    this.vortex0 = [Math.sin(t*0.13)*1.2, Math.cos(t*0.19)*0.4, Math.cos(t*0.11)*1.0];
+    this.vortex1 = [Math.cos(t*0.17)*1.5, Math.sin(t*0.23)*0.3, Math.sin(t*0.29)*1.3];
+    this.vortex2 = [Math.sin(t*0.31)*0.8, Math.cos(t*0.37)*0.5, Math.cos(t*0.41)*0.9];
+
+    // Compression center wanders
+    this.compressionCenter = [
+      Math.sin(t*0.13)*1.2 + Math.sin(t*0.31)*0.5,
+      Math.cos(t*0.17)*0.6,
+      Math.cos(t*0.11)*1.0 + Math.sin(t*0.23)*0.4
+    ];
+
+    // Intensity: audio FULLY drives when active, no auto baseline
+    let targetIntensity;
+    if (audio.active) {
+      targetIntensity = Math.min(1, audio.energy * 4.0);
+    } else {
+      targetIntensity = autoI;
+    }
+    // Very fast attack, fast release — follows audio tightly
+    const intSpeed = targetIntensity > this.intensity ? 0.4 : 0.15;
+    this.intensity += (targetIntensity - this.intensity) * intSpeed;
+
+    // Compression: pure audio when active
+    if (audio.active) {
+      this.compressionStrength = audio.sBass * 2.5 + audio.sTrans * 2.0;
+    } else {
+      this.compressionStrength = autoI;
+    }
+
+    // State transitions — driven by specific instruments
+    if (audio.active) {
+      if (audio.kickTrans > 0.12 && this.current !== 2) this.to(2);           // kick hit → burst
+      else if (audio.snareTrans > 0.1 && this.current === 0) this.to(1);      // snare → tension
+      else if (audio.energy < 0.04 && this.stateTime > 0.6 && this.current !== 0) this.to(0);
+      else if (audio.sustained > 0.5 && this.current < 1) this.to(1);         // sustained → tension buildup
+      else if (this.current === 2 && this.stateTime > 0.4 && audio.sKick < 0.2) this.to(3);
+      else if (this.current === 3 && this.stateTime > 0.6) this.to(4);
+      else if (this.current === 4 && this.stateTime > 0.8) this.to(0);
+    } else {
+      if (cp < 0.55) this.to(0);
+      else if (cp < 0.70) this.to(1);
+      else if (cp < 0.78) this.to(2);
+      else if (cp < 0.88) this.to(3);
+      else this.to(4);
+    }
+
+    // Warmth: instrument-specific color mapping
+    // kick/subBass → deep warm gold, snare → hot amber flash
+    // hihat/cymbal → cool blue shift, vocal sustained → violet glow
+    const warmthTargets = [0, 0.3, 1.0, 0.7, 0.1];
+    let targetWarmth;
+    if (audio.active) {
+      targetWarmth = audio.kick * 2.0          // kick → gold
+        + audio.kickTrans * 2.0                // kick hit → instant gold flash
+        + audio.snareTrans * 1.5               // snare → amber flash
+        + audio.subBass * 1.0                  // sub-bass → warm
+        - audio.hihat * 0.8                    // hihat → pulls cool
+        - audio.cymbal * 1.0                   // cymbal → pulls very cool
+        - audio.sustained * 0.4;              // sustained vocal → violet/cool
+      targetWarmth = Math.max(0, Math.min(1, targetWarmth));
+    } else {
+      targetWarmth = warmthTargets[this.current];
+    }
+    // Instant flash on transient, medium release
+    const warmSpeed = audio.active
+      ? (targetWarmth > this.warmth ? 0.45 : 0.1)
+      : 0.03;
+    this.warmth += (targetWarmth - this.warmth) * warmSpeed;
+
+    // Blend toward target state — much faster when audio active
+    const blendSpeed = audio.active ? 0.12 : (this.current === 0 ? 0.02 : 0.04);
+    for (let i = 0; i < 5; i++) {
+      const tgt = i === this.current ? 1 : 0;
+      this.blend[i] += (tgt - this.blend[i]) * blendSpeed;
+    }
+  }
+};
+
+// ─── GL HELPERS ──────────────────────────────────────
+function compileShader(src, type) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(s));
+    console.error(src.split('\n').map((l,i) => `${i+1}: ${l}`).join('\n'));
+  }
+  return s;
+}
+
+function createProgram(vs, fs, tf) {
+  const p = gl.createProgram();
+  gl.attachShader(p, compileShader(vs, gl.VERTEX_SHADER));
+  gl.attachShader(p, compileShader(fs, gl.FRAGMENT_SHADER));
+  if (tf) gl.transformFeedbackVaryings(p, tf, gl.SEPARATE_ATTRIBS);
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(p));
+  return p;
+}
+
+function getUniforms(prog, names) {
+  const u = {};
+  for (const n of names) u[n] = gl.getUniformLocation(prog, n);
+  return u;
+}
+
+// ─── TRANSFORM FEEDBACK SIMULATION ──────────────────
+// Use TF to update particle state on GPU — much cleaner than render-to-texture
+const SIM_VS = `#version 300 es
+precision highp float;
+
+// Current state
+in vec4 aPos;   // xyz = position, w = life
+in vec4 aVel;   // xyz = velocity, w = seed
+
+// Previous state for trails
+in vec4 aPrevPos;
+
+out vec4 vPos;
+out vec4 vVel;
+out vec4 vPrevPos;
+
+uniform float uTime;
+uniform float uDelta;
+uniform float uBass, uMids, uHighs, uTransient, uEnergy;
+uniform float uKick, uSnare, uHihat, uCymbal, uVocal, uSubBass;
+uniform float uKickTrans, uSnareTrans, uHihatTrans;
+uniform float uSustained;
+uniform float uTurbulence, uDensity, uReactivity;
+uniform float uCalm, uTension, uBurst, uCollapse, uRegen;
+uniform float uRhythm;
+uniform vec3 uVortex0, uVortex1, uVortex2;
+uniform vec3 uCompressCenter;
+uniform float uCompressStrength;
+uniform float uAutoIntensity;
+
+// Hash for pseudo-random
+vec3 hash33(vec3 p) {
+  p = vec3(dot(p, vec3(127.1,311.7,74.7)),
+           dot(p, vec3(269.5,183.3,246.1)),
+           dot(p, vec3(113.5,271.9,124.6)));
+  return fract(sin(p) * 43758.5453) * 2.0 - 1.0;
+}
+
+// Smooth noise
+float noise3(vec3 p) {
+  vec3 i = floor(p);
+  vec3 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = dot(hash33(i), f);
+  float b = dot(hash33(i + vec3(1,0,0)), f - vec3(1,0,0));
+  float c = dot(hash33(i + vec3(0,1,0)), f - vec3(0,1,0));
+  float d = dot(hash33(i + vec3(1,1,0)), f - vec3(1,1,0));
+  float e = dot(hash33(i + vec3(0,0,1)), f - vec3(0,0,1));
+  float g = dot(hash33(i + vec3(1,0,1)), f - vec3(1,0,1));
+  float h = dot(hash33(i + vec3(0,1,1)), f - vec3(0,1,1));
+  float j = dot(hash33(i + vec3(1,1,1)), f - vec3(1,1,1));
+  return mix(mix(mix(a,b,f.x), mix(c,d,f.x), f.y),
+             mix(mix(e,g,f.x), mix(h,j,f.x), f.y), f.z);
+}
+
+// Curl noise (divergence-free)
+vec3 curlNoise(vec3 p) {
+  float e = 0.1;
+  float n1, n2;
+  vec3 curl;
+
+  n1 = noise3(p + vec3(0, e, 0));
+  n2 = noise3(p - vec3(0, e, 0));
+  float dz_dy = (n1 - n2) / (2.0 * e);
+  n1 = noise3(p + vec3(0, 0, e));
+  n2 = noise3(p - vec3(0, 0, e));
+  float dy_dz = (n1 - n2) / (2.0 * e);
+  curl.x = dz_dy - dy_dz;
+
+  n1 = noise3(p + vec3(0, 0, e));
+  n2 = noise3(p - vec3(0, 0, e));
+  float dx_dz = (n1 - n2) / (2.0 * e);
+  n1 = noise3(p + vec3(e, 0, 0));
+  n2 = noise3(p - vec3(e, 0, 0));
+  float dz_dx = (n1 - n2) / (2.0 * e);
+  curl.y = dx_dz - dz_dx;
+
+  n1 = noise3(p + vec3(e, 0, 0));
+  n2 = noise3(p - vec3(e, 0, 0));
+  float dy_dx = (n1 - n2) / (2.0 * e);
+  n1 = noise3(p + vec3(0, e, 0));
+  n2 = noise3(p - vec3(0, e, 0));
+  float dx_dy = (n1 - n2) / (2.0 * e);
+  curl.z = dy_dx - dx_dy;
+
+  return curl;
+}
+
+vec3 fbmCurl(vec3 p, float t) {
+  vec3 c = vec3(0.0);
+  float amp = 1.0, freq = 1.0;
+  for (int i = 0; i < 3; i++) {
+    c += curlNoise(p * freq + vec3(t * 0.1 * float(i+1))) * amp;
+    freq *= 2.0;
+    amp *= 0.5;
+  }
+  return c;
+}
+
+void main() {
+  vec3 p = aPos.xyz;
+  vec3 v = aVel.xyz;
+  float life = aPos.w;
+  float seed = aVel.w;
+  float dt = min(uDelta, 0.033);
+  float react = uReactivity;
+
+  float dist = length(p);
+
+  // ── FORCES ──
+
+  // Intensity: audio takes full control when present
+  float audioI = clamp(uEnergy * 4.0, 0.0, 1.0);
+  float intensity = max(uAutoIntensity, audioI);
+
+  // 1. Vortex rotation — kick/subBass = power, vocal = flow direction change
+  float rotSpeed = 0.35 + uCalm * 0.3 + uAutoIntensity * 0.4
+    + uKick * react * 1.5        // kick drums → heavy rotation
+    + uVocal * react * 0.4       // vocals → gentler flowing
+    + uSubBass * react * 0.8     // sub-bass → deep rotation
+    + uBurst * 0.5;
+  vec3 totalVortex = vec3(0.0);
+  vec3 centers[3];
+  centers[0] = uVortex0;
+  centers[1] = uVortex1;
+  centers[2] = uVortex2;
+  float vWeights[3];
+  vWeights[0] = 1.0;
+  vWeights[1] = 0.7;
+  vWeights[2] = 0.5;
+  for (int i = 0; i < 3; i++) {
+    vec3 toC = p - centers[i];
+    float dC = length(toC);
+    float influence = 1.0 / (1.0 + dC * dC * 0.8);
+    vec3 tang = normalize(cross(toC + vec3(0.001), vec3(0.0, 1.0, 0.1 * float(i))));
+    vec3 tang2 = normalize(cross(toC + vec3(0.001), vec3(0.3, 0.7, -0.2)));
+    float bl = sin(uTime * (0.15 + float(i) * 0.07) + dC * 1.5) * 0.5 + 0.5;
+    totalVortex += mix(tang, tang2, bl) * rotSpeed * influence * vWeights[i];
+  }
+  vec3 vortex = totalVortex;
+
+  // ═══ INSTRUMENT-SPECIFIC FORCES ═══
+
+  // 2. Radial cohesion — kick pulses the whole form
+  float kickPulse = uKickTrans * react * 1.5; // kick hit → outward punch
+  float radial = -0.6 * uDensity * (1.0 - intensity * 0.2)
+    + kickPulse                               // kick expands
+    - uCollapse * 0.8
+    - uSustained * react * 0.3;              // sustained vocals → tighter tension
+  radial += smoothstep(1.0, 2.0, dist) * (-1.2) * uDensity;
+  radial -= smoothstep(0.0, 0.15, dist) * (-0.1);
+  vec3 radialF = normalize(p + 0.001) * radial;
+
+  // 2b. Compression — kick/subBass drive compression
+  vec3 toCompress = uCompressCenter - p;
+  float compDist = length(toCompress);
+  float compForce = uCompressStrength * 1.5 * (1.0 / (1.0 + compDist * 0.5));
+  compForce += uKick * react * 2.0 * (1.0 / (1.0 + compDist * 0.3));
+  compForce += uSubBass * react * 1.0;
+  vec3 compTang = normalize(cross(toCompress + vec3(0.001), vec3(0,1,0)));
+  vec3 compression = normalize(toCompress + vec3(0.001)) * compForce * 0.7 + compTang * compForce * 0.3;
+
+  // 3. Curl noise — each instrument type adds different turbulence character
+  //    hihat/cymbal → fine fast detail, snare → medium chaos, kick → large churn
+  float nScale = 0.35
+    + uHihat * react * 0.8      // hihat → fine scale
+    + uCymbal * react * 1.0;    // cymbal → finest, shimmering
+  float nTime = uTime * (0.1 + uVocal * react * 0.4 + uHihat * react * 0.5);
+  vec3 curl = fbmCurl(p * nScale, nTime);
+  float curlStr = 0.25 * uTurbulence
+    + uAutoIntensity * 0.3 * uTurbulence
+    + uKick * react * 0.8 * uTurbulence    // kick → big swirls
+    + uSnare * react * 1.2                  // snare → sharp chaotic burst
+    + uHihat * react * 0.8                  // hihat → fine texture
+    + uCymbal * react * 1.0                 // cymbal → shimmering surface
+    + uBurst * 0.5;
+  curl *= curlStr;
+
+  // 3b. KICK DEFORMATION — kick drums squash/stretch the entire form
+  float kickDeform = uKick * react * 2.5;
+  float rhythmPhase = uRhythm * 6.2832;
+  vec3 kickShape = vec3(
+    p.x * sin(rhythmPhase) * kickDeform * 0.3,
+    -p.y * kickDeform * 0.7,               // vertical squash on kick
+    p.z * cos(rhythmPhase) * kickDeform * 0.3
+  );
+
+  // 3c. SNARE DISRUPTION — snare hits create lateral shearing
+  float snareShear = uSnareTrans * react * 3.0;
+  vec3 snareDir = normalize(cross(p, vec3(sin(uTime*2.3), cos(uTime*1.7), 0.0)));
+  vec3 snareForce = snareDir * snareShear;
+
+  // 4. VOCAL/SUSTAINED — sustained notes create internal tension + stretch
+  float breathe = sin(uTime * 0.3) * 0.08 * uCalm;
+  // Vocals create smooth flowing deformation along the form
+  float vocalFlow = uVocal * react * 0.8;
+  float vocalWave = sin(dist * 3.0 - uTime * 0.6) * vocalFlow;
+  // Sustained increases tension — form stretches and gets thinner
+  float sustainStretch = uSustained * react * 0.5;
+  vec3 vertical = vec3(
+    p.x * sustainStretch * 0.3,   // stretch horizontally during sustained
+    vocalWave + breathe,
+    p.z * sustainStretch * 0.3
+  );
+
+  // 4b. Rhythm twist — kick drives heavy torque, snare adds counter-twist
+  float twistStr = uKick * react * 1.2 + uKickTrans * react * 1.5;
+  vec3 twistDir = vec3(-p.z * sin(rhythmPhase), 0.0, p.x * sin(rhythmPhase));
+  vec3 twist = twistDir * twistStr * (1.0 - smoothstep(0.0, 2.0, dist));
+  // Snare counter-twists for complexity
+  float snareTwist = uSnareTrans * react * 1.0;
+  twist += vec3(p.z * cos(rhythmPhase * 2.0), 0.0, -p.x * cos(rhythmPhase * 2.0))
+    * snareTwist * (1.0 - smoothstep(0.0, 1.5, dist));
+
+  // 5. Per-instrument transient bursts
+  // Kick → heavy outward punch from center
+  vec3 kickBurst = normalize(p + 0.001) * uKickTrans * react * 4.0;
+  // Snare → lateral spray
+  vec3 snareBurst = hash33(p * 15.0 + uTime) * uSnareTrans * react * 3.5;
+  // HiHat → surface crackle on outer shell only
+  float shell = smoothstep(0.2, 0.8, dist);
+  vec3 hihatCrackle = hash33(p * 80.0 + uTime * 10.0) * uHihatTrans * react * 1.5 * shell;
+
+  // 6. CYMBAL/HIHAT → high-freq shimmer on surface
+  vec3 cymbalShimmer = hash33(p * 100.0 + uTime * 12.0) * uCymbal * react * 0.6 * shell;
+  // Cymbals also add rotational flutter
+  float cymbalRot = uCymbal * react * 0.4;
+  vec3 cymbalSpin = normalize(cross(p, vec3(0,1,0))) * cymbalRot * shell;
+
+  // 7. Collapse implosion
+  vec3 implosion = -normalize(p + 0.001) * uCollapse * 1.0 * dist;
+
+  // 8. Regeneration spiral
+  float rAngle = atan(p.z, p.x) + uTime * 0.3;
+  vec3 regen = vec3(cos(rAngle), sin(dist * 3.0 - uTime) * 0.3, sin(rAngle))
+    * uRegen * 0.5 * (1.0 - smoothstep(0.0, 2.0, dist));
+
+  // Combine all instrument-specific forces
+  vec3 accel = vortex + radialF + compression
+    + kickShape + snareForce       // kick deformation + snare shearing
+    + curl + vertical + twist      // turbulence + vocal flow + rhythm twist
+    + kickBurst + snareBurst + hihatCrackle  // per-instrument transients
+    + cymbalShimmer + cymbalSpin   // cymbal surface effects
+    + implosion + regen;
+  v += accel * dt;
+
+  // Damping — tighter to keep form cohesive, sustained reduces damping (more tension)
+  float damping = 0.96 - uAutoIntensity * 0.008 - intensity * 0.01
+    - uBurst * 0.008 + uSustained * 0.008; // sustained → less damping → more tension
+  v *= damping;
+
+  // Speed limit
+  float speed = length(v);
+  float maxSpeed = 1.2 + intensity * 3.0 + uBurst * 3.0 + uTransient * react * 2.5;
+  if (speed > maxSpeed) v *= maxSpeed / speed;
+
+  // Store previous position
+  vPrevPos = vec4(p, life);
+
+  // Update position
+  p += v * dt;
+  life -= dt * (0.03 + uBurst * 0.04);
+
+  // Respawn — tight boundary keeps form cohesive
+  float boundary = 2.8 + uBurst * 1.2;
+  if (dist > boundary || life <= 0.0) {
+    vec3 h = hash33(vec3(seed * 100.0, uTime * 3.7, seed * 47.3));
+    float layer = fract(seed * 7.37);
+
+    if (layer < 0.5) {
+      // Core — dense center mass (50% of particles)
+      p = h * 0.5 * uDensity;
+    } else if (layer < 0.85) {
+      // Mid shell — tight ring
+      float a = h.x * 6.2832;
+      float r = (0.5 + h.y * 0.5) * uDensity;
+      p = vec3(cos(a) * r, h.z * 0.3, sin(a) * r);
+    } else {
+      // Outer — small, close halo
+      float a = h.x * 6.2832;
+      float phi = acos(h.y);
+      float r = (0.8 + h.z * 0.7) * uDensity;
+      p = vec3(sin(phi)*cos(a), cos(phi), sin(phi)*sin(a)) * r;
+    }
+
+    if (uRegen > 0.3) {
+      float sa = seed * 18.85 + uTime * 0.5;
+      float sr = seed * 2.0 * uDensity;
+      p = vec3(cos(sa) * sr, (seed - 0.5) * 1.5, sin(sa) * sr);
+    }
+
+    life = 0.5 + fract(seed * 13.37) * 0.5;
+    v *= 0.1;
+  }
+
+  vPos = vec4(p, life);
+  vVel = vec4(v, seed);
+}
+`;
+
+const SIM_FS = `#version 300 es
+precision lowp float;
+out vec4 fragColor;
+void main() { fragColor = vec4(0); }
+`;
+
+// ─── RENDER SHADERS ──────────────────────────────────
+const RENDER_VS = `#version 300 es
+precision highp float;
+
+in vec4 aPos;
+in vec4 aVel;
+in vec4 aPrevPos;
+
+uniform mat4 uProj;
+uniform mat4 uView;
+uniform float uAspect;
+uniform float uWarmth;
+uniform float uIntensity;
+
+out float vLife;
+out float vSpeed;
+out float vDepth;
+out float vLayer;
+out float vWarmth;
+out float vIntensity;
+out float vSeed;
+
+void main() {
+  vec3 p = aPos.xyz;
+  float life = aPos.w;
+  float speed = length(aVel.xyz);
+  float dist = length(p);
+
+  vec4 mvp = uView * vec4(p, 1.0);
+  gl_Position = uProj * mvp;
+
+  // Cohesive fluid particles — core dense, shell defined
+  float layerSize = dist < 0.5 ? 2.0 : (dist < 1.2 ? 1.4 : 0.8);
+  float baseSize = layerSize + speed * 0.15;
+  baseSize *= 1.0 + uIntensity * 0.35;
+  gl_PointSize = clamp(baseSize * 85.0 / max(-mvp.z, 0.5), 1.0, 14.0);
+
+  vLife = life;
+  vSpeed = speed;
+  vDepth = -mvp.z;
+  vLayer = dist < 0.5 ? 0.0 : (dist < 1.2 ? 1.0 : 2.0);
+  vWarmth = uWarmth;
+  vIntensity = uIntensity;
+  vSeed = aVel.w;
+}
+`;
+
+const RENDER_FS = `#version 300 es
+precision mediump float;
+
+in float vLife;
+in float vSpeed;
+in float vDepth;
+in float vLayer;
+in float vWarmth;
+in float vIntensity;
+in float vSeed;
+
+out vec4 fragColor;
+
+void main() {
+  vec2 c = gl_PointCoord - 0.5;
+  float r = length(c);
+  if (r > 0.5) discard;
+
+  // Hot bright center, fast dropoff — crisp 3D particle feel
+  float soft = exp(-r * r * 18.0);
+  float depthFade = 1.0 / (1.0 + vDepth * 0.08);
+  // Brightness driven by speed (compression = fast = bright)
+  float layerDim = vLayer < 0.5 ? 0.1 : (vLayer < 1.5 ? 0.18 : 0.30);
+  float speedBright = smoothstep(0.0, 2.0, vSpeed) * 0.6;
+  float bright = soft * depthFade * vLife * (layerDim + speedBright);
+
+  // ── COLOR PALETTE ──
+  // Cool (drift): electric violet / deep indigo / cold white
+  vec3 coolCore = vec3(0.4, 0.2, 0.95);
+  vec3 coolMid  = vec3(0.2, 0.15, 0.7);
+  vec3 coolHalo = vec3(0.6, 0.65, 0.95);
+  // Warm (compression peak): toxic gold / hot amber / searing white
+  vec3 warmCore = vec3(1.0, 0.9, 0.2);
+  vec3 warmMid  = vec3(1.0, 0.55, 0.1);
+  vec3 warmHalo = vec3(1.0, 0.85, 0.5);
+
+  vec3 cool = vLayer < 0.5 ? coolCore : (vLayer < 1.5 ? coolMid : coolHalo);
+  vec3 warm = vLayer < 0.5 ? warmCore : (vLayer < 1.5 ? warmMid : warmHalo);
+  vec3 col = mix(cool, warm, vWarmth);
+
+  // Fast particles → whiter
+  col = mix(col, vec3(0.95, 0.93, 0.9), vSpeed * 0.12);
+  // High intensity → brighter, whiter flare
+  col = mix(col, vec3(1.0), vIntensity * 0.25);
+
+  fragColor = vec4(col * bright, bright);
+}
+`;
+
+// Trail lines (current pos -> previous pos)
+const TRAIL_VS = `#version 300 es
+precision highp float;
+
+in vec4 aPos;
+in vec4 aVel;
+in vec4 aPrevPos;
+in float aEnd; // 0=current, 1=previous
+
+uniform mat4 uProj;
+uniform mat4 uView;
+uniform float uWarmth;
+uniform float uIntensity;
+
+out float vAlpha;
+out float vLife;
+out float vSpeed;
+out float vDepth;
+out float vDist;
+out float vWarmth;
+out float vIntensity;
+
+void main() {
+  // Extend trail 1.5x beyond previous position for filament structures
+  vec3 dir = aPos.xyz - aPrevPos.xyz;
+  vec3 p = mix(aPos.xyz, aPrevPos.xyz - dir * 0.5, aEnd);
+  float life = aPos.w;
+  float speed = length(aVel.xyz);
+
+  vec4 mvp = uView * vec4(p, 1.0);
+  gl_Position = uProj * mvp;
+
+  vAlpha = 1.0 - aEnd * 0.6;
+  vLife = life;
+  vSpeed = speed;
+  vDepth = -mvp.z;
+  vDist = length(aPos.xyz);
+  vWarmth = uWarmth;
+  vIntensity = uIntensity;
+}
+`;
+
+const TRAIL_FS = `#version 300 es
+precision mediump float;
+in float vAlpha;
+in float vLife;
+in float vSpeed;
+in float vDepth;
+in float vDist;
+in float vWarmth;
+in float vIntensity;
+out vec4 fragColor;
+void main() {
+  float depthFade = 1.0 / (1.0 + vDepth * 0.07);
+  float speedFactor = smoothstep(0.0, 2.0, vSpeed);
+  float bright = depthFade * vLife * vAlpha * (0.15 + speedFactor * 0.5);
+
+  // Violet / gold trail palette — tighter layers
+  vec3 cool = vDist < 0.5 ? vec3(0.35, 0.18, 0.85) : (vDist < 1.2 ? vec3(0.18, 0.12, 0.65) : vec3(0.5, 0.55, 0.85));
+  vec3 warm = vDist < 0.5 ? vec3(0.95, 0.85, 0.18) : (vDist < 1.2 ? vec3(0.95, 0.5, 0.1) : vec3(0.9, 0.75, 0.45));
+  vec3 col = mix(cool, warm, vWarmth);
+  col = mix(col, vec3(1.0), vIntensity * 0.2);
+
+  fragColor = vec4(col * bright, bright);
+}
+`;
+
+// ─── POST PROCESS (bloom) ────────────────────────────
+const POST_VS = `#version 300 es
+in vec2 aPos;
+out vec2 vUv;
+void main() {
+  vUv = aPos * 0.5 + 0.5;
+  gl_Position = vec4(aPos, 0, 1);
+}
+`;
+
+const COMPOSE_FS = `#version 300 es
+precision highp float;
+in vec2 vUv;
+out vec4 fragColor;
+uniform sampler2D uScene;
+uniform float uBrightness;
+uniform float uWarmth;
+uniform float uTime;
+uniform float uIntensity;
+uniform vec2 uRes;
+
+// Hash functions for noise
+float hash21(vec2 p) {
+  p = fract(p * vec2(234.34, 435.345));
+  p += dot(p, p + 34.23);
+  return fract(p.x * p.y);
+}
+
+float noise2(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = hash21(i);
+  float b = hash21(i + vec2(1, 0));
+  float c = hash21(i + vec2(0, 1));
+  float d = hash21(i + vec2(1, 1));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+
+float fbm(vec2 p) {
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 4; i++) {
+    v += noise2(p) * a;
+    p *= 2.1;
+    a *= 0.5;
+  }
+  return v;
+}
+
+void main() {
+  vec3 c = texture(uScene, vUv).rgb * uBrightness;
+
+  float lum = dot(c, vec3(0.299, 0.587, 0.114));
+
+  // ── SUBTLE INTERNAL STRUCTURE LINES ──
+  // Faint dark veins only in brightest compression zones
+  float t = uTime * 0.04;
+  vec2 uv = vUv * vec2(uRes.x / uRes.y, 1.0);
+  float angle1 = fbm(uv * 3.0 + t * 0.15) * 6.2832;
+  vec2 flow1 = vec2(cos(angle1), sin(angle1));
+  float s1 = fbm(uv * 6.0 + flow1 * 2.0 + t * 0.08);
+  float stroke = smoothstep(0.46, 0.54, s1);
+
+  // Only in bright luminous zones — invisible in dark areas
+  float strokeMask = smoothstep(0.25, 0.5, lum) * (1.0 - smoothstep(0.8, 1.3, lum));
+  c *= 1.0 - stroke * strokeMask * 0.2;
+
+  // ── BACKGROUND TINT ──
+  vec3 bgCool = vec3(0.003, 0.005, 0.015);
+  vec3 bgWarm = vec3(0.015, 0.005, 0.003);
+  vec3 bg = mix(bgCool, bgWarm, uWarmth);
+  c += bg * (1.0 - smoothstep(0.0, 0.04, lum));
+
+  // ── FILM GRAIN ──
+  float grain = hash21(vUv * uRes + fract(uTime * 100.0)) - 0.5;
+  c += grain * 0.02;
+
+  // ── VIGNETTE ──
+  float d = distance(vUv, vec2(0.5));
+  c *= 1.0 - smoothstep(0.25, 0.9, d) * 0.7;
+
+  // ── FILMIC TONE MAP (punchier contrast) ──
+  c = c * (1.0 + c * 0.5) / (1.0 + c);
+  fragColor = vec4(max(c, vec3(0.0)), 1.0);
+}
+`;
+
+// ─── SETUP ───────────────────────────────────────────
+let W = canvas.width = window.innerWidth;
+let H = canvas.height = window.innerHeight;
+gl.viewport(0, 0, W, H);
+
+// Check float texture support
+const extFloat = gl.getExtension('EXT_color_buffer_float');
+if (!extFloat) console.warn('EXT_color_buffer_float not available');
+
+// Programs
+const simProg = createProgram(SIM_VS, SIM_FS, ['vPos', 'vVel', 'vPrevPos']);
+const simUni = getUniforms(simProg, [
+  'uTime','uDelta','uBass','uMids','uHighs','uTransient','uEnergy',
+  'uKick','uSnare','uHihat','uCymbal','uVocal','uSubBass',
+  'uKickTrans','uSnareTrans','uHihatTrans','uSustained',
+  'uTurbulence','uDensity','uReactivity',
+  'uCalm','uTension','uBurst','uCollapse','uRegen','uRhythm',
+  'uVortex0','uVortex1','uVortex2','uCompressCenter','uCompressStrength','uAutoIntensity'
+]);
+
+const renderProg = createProgram(RENDER_VS, RENDER_FS);
+const renderUni = getUniforms(renderProg, ['uProj', 'uView', 'uAspect', 'uWarmth', 'uIntensity']);
+
+const trailProg = createProgram(TRAIL_VS, TRAIL_FS);
+const trailUni = getUniforms(trailProg, ['uProj', 'uView', 'uWarmth', 'uIntensity']);
+
+const composeProg = createProgram(POST_VS, COMPOSE_FS);
+const composeUni = getUniforms(composeProg, ['uScene', 'uBrightness', 'uWarmth', 'uTime', 'uIntensity', 'uRes']);
+
+// ─── PARTICLE BUFFERS (ping-pong) ────────────────────
+const N = P.count;
+const posData = new Float32Array(N * 4);
+const velData = new Float32Array(N * 4);
+const prevPosData = new Float32Array(N * 4);
+
+for (let i = 0; i < N; i++) {
+  const i4 = i * 4;
+  const layer = Math.random();
+  let x, y, z;
+  if (layer < 0.4) {
+    const r = Math.random() * 0.9;
+    const th = Math.random() * Math.PI * 2;
+    const ph = Math.acos(Math.random() * 2 - 1);
+    x = r * Math.sin(ph) * Math.cos(th);
+    y = r * Math.cos(ph);
+    z = r * Math.sin(ph) * Math.sin(th);
+  } else if (layer < 0.75) {
+    const a = Math.random() * Math.PI * 2;
+    const r = 0.8 + Math.random() * 0.6;
+    x = Math.cos(a) * r;
+    y = (Math.random() - 0.5) * 0.5;
+    z = Math.sin(a) * r;
+  } else {
+    const r = 1.5 + Math.random() * 2;
+    const th = Math.random() * Math.PI * 2;
+    const ph = Math.acos(Math.random() * 2 - 1);
+    x = r * Math.sin(ph) * Math.cos(th);
+    y = r * Math.cos(ph);
+    z = r * Math.sin(ph) * Math.sin(th);
+  }
+  posData[i4] = x; posData[i4+1] = y; posData[i4+2] = z;
+  posData[i4+3] = 0.5 + Math.random() * 0.5;
+  prevPosData[i4] = x; prevPosData[i4+1] = y; prevPosData[i4+2] = z;
+  prevPosData[i4+3] = posData[i4+3];
+  velData[i4] = (Math.random() - 0.5) * 0.1;
+  velData[i4+1] = (Math.random() - 0.5) * 0.1;
+  velData[i4+2] = (Math.random() - 0.5) * 0.1;
+  velData[i4+3] = Math.random(); // seed
+}
+
+function createBuffer(data) {
+  const b = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_COPY);
+  return b;
+}
+
+// Ping-pong buffers: [read, write]
+let bufPos = [createBuffer(posData), createBuffer(new Float32Array(N * 4))];
+let bufVel = [createBuffer(velData), createBuffer(new Float32Array(N * 4))];
+let bufPrev = [createBuffer(prevPosData), createBuffer(new Float32Array(N * 4))];
+
+// Transform feedback objects
+const tf = [gl.createTransformFeedback(), gl.createTransformFeedback()];
+
+// VAOs for simulation
+const simVAO = [gl.createVertexArray(), gl.createVertexArray()];
+for (let i = 0; i < 2; i++) {
+  gl.bindVertexArray(simVAO[i]);
+  const posLoc = gl.getAttribLocation(simProg, 'aPos');
+  const velLoc = gl.getAttribLocation(simProg, 'aVel');
+  const prevLoc = gl.getAttribLocation(simProg, 'aPrevPos');
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufPos[i]);
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 4, gl.FLOAT, false, 0, 0);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufVel[i]);
+  gl.enableVertexAttribArray(velLoc);
+  gl.vertexAttribPointer(velLoc, 4, gl.FLOAT, false, 0, 0);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufPrev[i]);
+  gl.enableVertexAttribArray(prevLoc);
+  gl.vertexAttribPointer(prevLoc, 4, gl.FLOAT, false, 0, 0);
+}
+gl.bindVertexArray(null);
+
+// Bind TF outputs
+for (let i = 0; i < 2; i++) {
+  gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, tf[i]);
+  gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 0, bufPos[1 - i]);
+  gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 1, bufVel[1 - i]);
+  gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 2, bufPrev[1 - i]);
+}
+gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, null);
+
+// VAOs for rendering
+const renderVAO = [gl.createVertexArray(), gl.createVertexArray()];
+for (let i = 0; i < 2; i++) {
+  gl.bindVertexArray(renderVAO[i]);
+  const posLoc = gl.getAttribLocation(renderProg, 'aPos');
+  const velLoc = gl.getAttribLocation(renderProg, 'aVel');
+  const prevLoc = gl.getAttribLocation(renderProg, 'aPrevPos');
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufPos[i]);
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 4, gl.FLOAT, false, 0, 0);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufVel[i]);
+  gl.enableVertexAttribArray(velLoc);
+  gl.vertexAttribPointer(velLoc, 4, gl.FLOAT, false, 0, 0);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufPrev[i]);
+  gl.enableVertexAttribArray(prevLoc);
+  gl.vertexAttribPointer(prevLoc, 4, gl.FLOAT, false, 0, 0);
+}
+gl.bindVertexArray(null);
+
+// Trail rendering: need interleaved current + prev with end flag
+// We'll use instanced rendering: each instance = 1 particle, 2 vertices per instance
+const trailEndBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, trailEndBuf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 1]), gl.STATIC_DRAW);
+
+const trailVAO = [gl.createVertexArray(), gl.createVertexArray()];
+for (let i = 0; i < 2; i++) {
+  gl.bindVertexArray(trailVAO[i]);
+
+  const posLoc = gl.getAttribLocation(trailProg, 'aPos');
+  const velLoc = gl.getAttribLocation(trailProg, 'aVel');
+  const prevLoc = gl.getAttribLocation(trailProg, 'aPrevPos');
+  const endLoc = gl.getAttribLocation(trailProg, 'aEnd');
+
+  // Per-instance attributes (particle data)
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufPos[i]);
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 4, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(posLoc, 1);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufVel[i]);
+  gl.enableVertexAttribArray(velLoc);
+  gl.vertexAttribPointer(velLoc, 4, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(velLoc, 1);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, bufPrev[i]);
+  gl.enableVertexAttribArray(prevLoc);
+  gl.vertexAttribPointer(prevLoc, 4, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(prevLoc, 1);
+
+  // Per-vertex end flag
+  gl.bindBuffer(gl.ARRAY_BUFFER, trailEndBuf);
+  gl.enableVertexAttribArray(endLoc);
+  gl.vertexAttribPointer(endLoc, 1, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(endLoc, 0);
+}
+gl.bindVertexArray(null);
+
+// ─── FULLSCREEN QUAD ─────────────────────────────────
+const quadBuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+const quadVAO = gl.createVertexArray();
+gl.bindVertexArray(quadVAO);
+gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+gl.enableVertexAttribArray(0);
+gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+gl.bindVertexArray(null);
+
+// ─── FRAMEBUFFERS FOR POST-PROCESSING ────────────────
+function createFBO(w, h) {
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+  const fbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  // Clear to black — prevents garbage GPU memory from appearing as artifacts
+  gl.clearColor(0, 0, 0, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return { fbo, tex, w, h };
+}
+
+let sceneFBO = createFBO(W, H);
+
+function resizeFBOs() {
+  gl.deleteTexture(sceneFBO.tex); gl.deleteFramebuffer(sceneFBO.fbo);
+  sceneFBO = createFBO(W, H);
+}
+
+// ─── CAMERA ──────────────────────────────────────────
+function mat4Perspective(fov, aspect, near, far) {
+  const f = 1 / Math.tan(fov / 2);
+  const nf = 1 / (near - far);
+  return new Float32Array([
+    f/aspect, 0, 0, 0,
+    0, f, 0, 0,
+    0, 0, (far+near)*nf, -1,
+    0, 0, 2*far*near*nf, 0
+  ]);
+}
+
+function mat4LookAt(eye, center, up) {
+  const zx = eye[0]-center[0], zy = eye[1]-center[1], zz = eye[2]-center[2];
+  let l = 1/Math.sqrt(zx*zx+zy*zy+zz*zz);
+  const fz = [zx*l, zy*l, zz*l];
+  const sx = up[1]*fz[2]-up[2]*fz[1], sy = up[2]*fz[0]-up[0]*fz[2], sz = up[0]*fz[1]-up[1]*fz[0];
+  l = 1/Math.sqrt(sx*sx+sy*sy+sz*sz);
+  const fs = [sx*l, sy*l, sz*l];
+  const ux = fz[1]*fs[2]-fz[2]*fs[1], uy = fz[2]*fs[0]-fz[0]*fs[2], uz = fz[0]*fs[1]-fz[1]*fs[0];
+  return new Float32Array([
+    fs[0], ux, fz[0], 0,
+    fs[1], uy, fz[1], 0,
+    fs[2], uz, fz[2], 0,
+    -(fs[0]*eye[0]+fs[1]*eye[1]+fs[2]*eye[2]),
+    -(ux*eye[0]+uy*eye[1]+uz*eye[2]),
+    -(fz[0]*eye[0]+fz[1]*eye[1]+fz[2]*eye[2]),
+    1
+  ]);
+}
+
+let camAngle = 0, camY = 0;
+
+// ─── MAIN LOOP ──────────────────────────────────────
+let pingpong = 0;
+let time = 0;
+let lastTime = performance.now();
+let frameCount = 0, fpsTime = 0;
+let frozen = false;
+let captureNext = false; // flag to capture PNG after next render
+
+function frame(now) {
+  requestAnimationFrame(frame);
+
+  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+  time += dt;
+
+  // FPS
+  frameCount++;
+  fpsTime += dt;
+  if (fpsTime >= 1) {
+    document.getElementById('fps').textContent = Math.round(frameCount / fpsTime) + ' fps';
+    frameCount = 0; fpsTime = 0;
+  }
+
+  if (!frozen) {
+    audio.update();
+    behavior.update(dt);
+  }
+
+  // ── AUTO-REACTIVE PARAMS ──
+  if (audio.active && !frozen) {
+    const e = audio.energy;
+    const b = audio.sBass;
+    const t = audio.sTrans;
+
+    // Density: kick compresses, sustained tightens
+    const targetDensity = 0.8 + audio.sKick * 2.0 + audio.sustained * 0.8 + e * 0.5;
+    P.density += (targetDensity - P.density) * 0.2;
+    P.density = Math.max(0.5, Math.min(2.5, P.density));
+
+    // Turbulence: hihat/cymbal → fine detail, snare → chaos burst
+    const targetTurb = 0.3 + audio.sHihat * 2.5 + audio.sCymbal * 2.0
+      + audio.sSnare * 1.5 + e * 1.0;
+    P.turbulence += (targetTurb - P.turbulence) * 0.2;
+    P.turbulence = Math.max(0.2, Math.min(3.0, P.turbulence));
+
+    // Brightness: kick flash + sustained glow + energy
+    const targetBright = 0.8 + audio.kickTrans * 2.5 + audio.snareTrans * 1.5
+      + audio.sustained * 0.6 + e * 1.2;
+    const brightSpeed = targetBright > P.brightness ? 0.4 : 0.06;
+    P.brightness += (targetBright - P.brightness) * brightSpeed;
+    P.brightness = Math.max(0.5, Math.min(3.0, P.brightness));
+
+    // Update slider UI
+    document.getElementById('sDens').value = P.density;
+    document.getElementById('vDens').textContent = P.density.toFixed(1);
+    document.getElementById('sTurb').value = P.turbulence;
+    document.getElementById('vTurb').textContent = P.turbulence.toFixed(1);
+    document.getElementById('sBright').value = P.brightness;
+    document.getElementById('vBright').textContent = P.brightness.toFixed(2);
+  }
+
+  const src = pingpong;
+  const dst = 1 - pingpong;
+
+  // ── SIMULATION (Transform Feedback) ──
+  if (!frozen) {
+    gl.useProgram(simProg);
+    gl.uniform1f(simUni.uTime, time);
+    gl.uniform1f(simUni.uDelta, dt);
+    gl.uniform1f(simUni.uBass, audio.sBass);
+    gl.uniform1f(simUni.uMids, audio.sMids);
+    gl.uniform1f(simUni.uHighs, audio.sHighs);
+    gl.uniform1f(simUni.uTransient, audio.sTrans);
+    gl.uniform1f(simUni.uEnergy, audio.energy);
+    gl.uniform1f(simUni.uKick, audio.sKick);
+    gl.uniform1f(simUni.uSnare, audio.sSnare);
+    gl.uniform1f(simUni.uHihat, audio.sHihat);
+    gl.uniform1f(simUni.uCymbal, audio.sCymbal);
+    gl.uniform1f(simUni.uVocal, audio.sVocal);
+    gl.uniform1f(simUni.uSubBass, audio.sSubBass);
+    gl.uniform1f(simUni.uKickTrans, audio.kickTrans);
+    gl.uniform1f(simUni.uSnareTrans, audio.snareTrans);
+    gl.uniform1f(simUni.uHihatTrans, audio.hihatTrans);
+    gl.uniform1f(simUni.uSustained, audio.sustained);
+    gl.uniform1f(simUni.uTurbulence, P.turbulence);
+    gl.uniform1f(simUni.uDensity, P.density);
+    gl.uniform1f(simUni.uReactivity, P.reactivity);
+    gl.uniform1f(simUni.uCalm, behavior.blend[0]);
+    gl.uniform1f(simUni.uTension, behavior.blend[1]);
+    gl.uniform1f(simUni.uBurst, behavior.blend[2]);
+    gl.uniform1f(simUni.uCollapse, behavior.blend[3]);
+    gl.uniform1f(simUni.uRegen, behavior.blend[4]);
+    gl.uniform1f(simUni.uRhythm, audio.rhythm);
+    gl.uniform3fv(simUni.uVortex0, behavior.vortex0);
+    gl.uniform3fv(simUni.uVortex1, behavior.vortex1);
+    gl.uniform3fv(simUni.uVortex2, behavior.vortex2);
+    gl.uniform3fv(simUni.uCompressCenter, behavior.compressionCenter);
+    gl.uniform1f(simUni.uCompressStrength, behavior.compressionStrength);
+    gl.uniform1f(simUni.uAutoIntensity, behavior.autoIntensity);
+
+    gl.enable(gl.RASTERIZER_DISCARD);
+    gl.bindVertexArray(simVAO[src]);
+    gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, tf[src]);
+    gl.beginTransformFeedback(gl.POINTS);
+    gl.drawArrays(gl.POINTS, 0, N);
+    gl.endTransformFeedback();
+    gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, null);
+    gl.disable(gl.RASTERIZER_DISCARD);
+    gl.bindVertexArray(null);
+  }
+
+  // ── RENDER TO SCENE FBO ──
+  const proj = mat4Perspective(1.05, W / H, 0.1, 100);
+  // Camera: very slow in calm, faster with audio energy
+  const camSpeed = 0.03 + behavior.intensity * 0.12 + audio.sBass * 0.08;
+  camAngle += dt * camSpeed;
+  camY += (Math.sin(time * 0.1) * 0.6 + Math.cos(time * 0.07) * 0.3 - camY) * 0.015;
+  const r = 4.5 + Math.sin(time * 0.08) * 0.4 - behavior.intensity * 1.0;
+  const eye = [Math.cos(camAngle) * r, camY, Math.sin(camAngle) * r];
+  const view = mat4LookAt(eye, [0, 0, 0], [0, 1, 0]);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFBO.fbo);
+  gl.viewport(0, 0, W, H);
+  gl.clearColor(0, 0, 0, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE); // additive
+
+  // Draw trail lines
+  gl.useProgram(trailProg);
+  gl.uniformMatrix4fv(trailUni.uProj, false, proj);
+  gl.uniformMatrix4fv(trailUni.uView, false, view);
+  gl.uniform1f(trailUni.uWarmth, behavior.warmth);
+  gl.uniform1f(trailUni.uIntensity, behavior.intensity);
+  gl.bindVertexArray(trailVAO[dst]);
+  gl.drawArraysInstanced(gl.LINES, 0, 2, N);
+  gl.bindVertexArray(null);
+
+  // Draw points
+  gl.useProgram(renderProg);
+  gl.uniformMatrix4fv(renderUni.uProj, false, proj);
+  gl.uniformMatrix4fv(renderUni.uView, false, view);
+  gl.uniform1f(renderUni.uAspect, W / H);
+  gl.uniform1f(renderUni.uWarmth, behavior.warmth);
+  gl.uniform1f(renderUni.uIntensity, behavior.intensity);
+  gl.bindVertexArray(renderVAO[dst]);
+  gl.drawArrays(gl.POINTS, 0, N);
+  gl.bindVertexArray(null);
+
+  gl.disable(gl.BLEND);
+
+  // ── COMPOSE (scene → screen with ink strokes, grain, vignette, tone map) ──
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, W, H);
+  gl.clearColor(0, 0, 0, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.useProgram(composeProg);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, sceneFBO.tex);
+  gl.uniform1i(composeUni.uScene, 0);
+  gl.uniform1f(composeUni.uBrightness, P.brightness);
+  gl.uniform1f(composeUni.uWarmth, behavior.warmth);
+  gl.uniform1f(composeUni.uTime, time);
+  gl.uniform1f(composeUni.uIntensity, behavior.intensity);
+  gl.uniform2f(composeUni.uRes, W, H);
+  gl.bindVertexArray(quadVAO);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.bindVertexArray(null);
+
+  if (!frozen) pingpong = dst;
+
+  // ── CAPTURE PNG (must happen right after render, before buffer swap) ──
+  if (captureNext) {
+    captureNext = false;
+    canvas.toBlob(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'vortex-' + Date.now() + '.png';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }, 'image/png');
+  }
+}
+
+// ─── RESIZE ──────────────────────────────────────────
+window.addEventListener('resize', () => {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  resizeFBOs();
+});
+
+// ─── UI ──────────────────────────────────────────────
+const panel = document.getElementById('panel');
+const panelTab = document.getElementById('panel-tab');
+
+panelTab.onclick = () => panel.classList.toggle('hidden');
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && e.target === document.body) {
+    e.preventDefault();
+    panel.classList.toggle('hidden');
+  }
+});
+
+function bindSlider(id, key, fmt) {
+  const el = document.getElementById(id);
+  const vEl = document.getElementById(id.replace('s', 'v'));
+  // Reset to default value (prevents browser form restoration)
+  el.value = P[key];
+  vEl.textContent = fmt(P[key]);
+  el.addEventListener('input', () => {
+    P[key] = parseFloat(el.value);
+    vEl.textContent = fmt(P[key]);
+  });
+}
+bindSlider('sCount', 'count', v => Math.round(v/1000)+'k');
+bindSlider('sReact', 'reactivity', v => v.toFixed(2));
+bindSlider('sTurb', 'turbulence', v => v.toFixed(1));
+bindSlider('sDens', 'density', v => v.toFixed(1));
+bindSlider('sBright', 'brightness', v => v.toFixed(2));
+
+const btnMic = document.getElementById('btnMic');
+btnMic.onclick = async () => {
+  try {
+    await audio.mic();
+    btnMic.textContent = 'mic on';
+    btnMic.classList.add('active');
+  } catch(e) { console.warn(e); }
+};
+document.getElementById('btnFile').onclick = () => document.getElementById('fileIn').click();
+document.getElementById('fileIn').onchange = async (e) => {
+  if (e.target.files[0]) {
+    await audio.file(e.target.files[0]);
+    document.getElementById('btnFile').textContent = 'playing';
+    document.getElementById('btnFile').classList.add('active');
+  }
+};
+
+// Drag & drop
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', async e => {
+  e.preventDefault();
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('audio/')) {
+    await audio.file(f);
+    document.getElementById('btnFile').textContent = 'playing';
+    document.getElementById('btnFile').classList.add('active');
+    dismissOverlay();
+  }
+});
+
+function dismissOverlay() {
+  const o = document.getElementById('overlay');
+  o.style.opacity = '0';
+  setTimeout(() => o.style.display = 'none', 600);
+}
+
+document.getElementById('overlay').onclick = (e) => { e.stopPropagation(); dismissOverlay(); };
+
+// ─── FREEZE / SAVE / SVG ─────────────────────────────
+const btnFreeze = document.getElementById('btnFreeze');
+btnFreeze.onclick = () => {
+  frozen = !frozen;
+  btnFreeze.textContent = frozen ? 'unfreeze' : 'freeze';
+  btnFreeze.classList.toggle('active', frozen);
+};
+
+document.getElementById('btnPng').onclick = () => {
+  captureNext = true;
+};
+
+document.getElementById('btnSvg').onclick = () => {
+  // Read particle positions from GPU
+  const readBuf = bufPos[frozen ? pingpong : (1 - pingpong)];
+  const data = new Float32Array(N * 4);
+  gl.bindBuffer(gl.ARRAY_BUFFER, readBuf);
+  gl.getBufferSubData(gl.ARRAY_BUFFER, 0, data);
+
+  // Current camera
+  const camR = 5 + Math.sin(time * 0.1) * 0.5;
+  const eye = [Math.cos(camAngle) * camR, camY, Math.sin(camAngle) * camR];
+  const proj = mat4Perspective(1.05, W / H, 0.1, 100);
+  const view = mat4LookAt(eye, [0, 0, 0], [0, 1, 0]);
+
+  // Project particles to 2D
+  let circles = '';
+  for (let i = 0; i < N; i++) {
+    const i4 = i * 4;
+    const x = data[i4], y = data[i4+1], z = data[i4+2], life = data[i4+3];
+    if (life <= 0) continue;
+
+    const vx = view[0]*x + view[4]*y + view[8]*z + view[12];
+    const vy = view[1]*x + view[5]*y + view[9]*z + view[13];
+    const vz = view[2]*x + view[6]*y + view[10]*z + view[14];
+    const vw = view[3]*x + view[7]*y + view[11]*z + view[15];
+    const px = proj[0]*vx + proj[4]*vy + proj[8]*vz + proj[12]*vw;
+    const py = proj[1]*vx + proj[5]*vy + proj[9]*vz + proj[13]*vw;
+    const pw = proj[3]*vx + proj[7]*vy + proj[11]*vz + proj[15]*vw;
+    if (pw <= 0) continue;
+
+    const sx = (px / pw * 0.5 + 0.5) * W;
+    const sy = (1 - (py / pw * 0.5 + 0.5)) * H;
+    if (sx < -50 || sx > W + 50 || sy < -50 || sy > H + 50) continue;
+
+    const dist = Math.sqrt(x*x + y*y + z*z);
+    const depth = -vz;
+    const depthFade = 1 / (1 + depth * 0.15);
+    const layerDim = dist < 0.8 ? 0.12 : (dist < 2.0 ? 0.25 : 0.40);
+    const bright = depthFade * life * layerDim;
+    const radius = Math.max(0.3, Math.min(3, 90 / Math.max(depth, 0.5) * 0.5));
+    const opacity = Math.min(1, bright * 2);
+    if (opacity < 0.02) continue;
+
+    circles += `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${radius.toFixed(1)}" fill="white" opacity="${opacity.toFixed(3)}"/>\n`;
+  }
+
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">\n<rect width="100%" height="100%" fill="black"/>\n${circles}</svg>`;
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'vortex-' + Date.now() + '.svg';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+// Keyboard: F to freeze
+document.addEventListener('keydown', e => {
+  if (e.code === 'KeyF' && e.target === document.body) btnFreeze.click();
+});
+
+// ─── START ───────────────────────────────────────────
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
