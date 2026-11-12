@@ -181,6 +181,35 @@ def build_bird(SH):
 	res(rend, 'rgba16float'); black_bg(rend)
 	photo = mk(Bc, levelTOP, 'photo_lvl', -300, 0, (flap,))
 	mix = mk(Bc, compositeTOP, 'mix', 900, 0, (photo, rend)); setp(mix, 'operand', 'add')
-	tr = trails(Bc, mix, 1100, 0)
-	glow = bloom(Bc, tr, 1900, 0, "0.5")
-	mk(Bc, nullTOP, 'out1', 2500, 0, (glow,))
+	# ── historie snímků (60 snímků, 640×360) pro slit-scan a chronofotografii ──
+	sway = mk(Bc, transformTOP, 'sway', -500, 400, (flap,)); setp(sway, 'extend', 'zero')   # houpání v rytmu: kopie v čase se rozestoupí
+	hsrc = mk(Bc, resolutionTOP, 'hist_src', -300, 400, (sway,)); custom_res(hsrc, 640, 360); setp(hsrc, 'format', 'rgba8fixed')
+	hist = mk(Bc, texture3dTOP, 'hist', -100, 400, (hsrc,)); setp(hist, 'cachesize', 60)
+	tmap = glsl(Bc, 'tmap', 'bird_tmap.glsl', -100, 600, ['uT0', 'uT1'], fmt='rgba8fixed'); custom_res(tmap, 320, 180)
+	for n_, v_ in (('vec0valuez', .5), ('vec0valuew', .5), ('vec1valuex', 1), ('vec1valuez', 1.78)): setp(tmap, n_, v_)
+	slit = mk(Bc, timemachineTOP, 'slit', 100, 500, (hist, tmap))
+	setp(slit, 'blackoffsetunit', 'frames'); setp(slit, 'whiteoffsetunit', 'frames'); setp(slit, 'blackoffset', 0); setp(slit, 'whiteoffset', 30)
+	zmap = mk(Bc, constantTOP, 'zero_map', -100, 750); custom_res(zmap, 16, 9)
+	for n_ in ('colorr', 'colorg', 'colorb'): setp(zmap, n_, 0)
+	echoes = [hsrc]
+	for i in range(1, 6):                                             # kopie ptáka z postupně starších okamžiků
+		e_ = mk(Bc, timemachineTOP, 'echo%d' % i, 100 + i * 130, 750, (hist, zmap))
+		setp(e_, 'blackoffsetunit', 'frames'); setp(e_, 'whiteoffsetunit', 'frames'); setp(e_, 'blackoffset', i * 6); setp(e_, 'whiteoffset', i * 6)
+		echoes.append(e_)
+	chrono = glsl(Bc, 'chrono', 'bird_chrono.glsl', 900, 700, ['uC0', 'uC1'], tuple(echoes))
+	setp(chrono, 'vec0valuex', 1); setp(chrono, 'vec0valuey', .7)
+	izero = mk(Bc, constantTOP, 'ink_zero', 300, 1000); custom_res(izero, 640, 360); setp(izero, 'format', 'rgba16float')
+	for n_ in ('colorr', 'colorg', 'colorb'): setp(izero, n_, 0)
+	ifb = mk(Bc, feedbackTOP, 'ink_fb', 500, 1000, (izero,))
+	ink = glsl(Bc, 'ink', 'bird_ink.glsl', 700, 1000, ['uI0', 'uI1'], (ifb, flap))
+	ifb.par.top = ink
+	for n_, v_ in (('vec0valuez', .9), ('vec1valuez', 1.78), ('vec1valuew', 2)): setp(ink, n_, v_)
+	look = glsl(Bc, 'look', 'bird_look.glsl', 1100, 300, ['uL0', 'uL1'], (mix, slit, chrono, ink), custom_res=True)
+	setp(look, 'vec0valuex', 1); setp(look, 'vec1valuez', 1)
+	ctr = mk(Bc, transformTOP, 'center', 1200, 450, (look,)); setp(ctr, 'extend', 'zero')     # pták doprostřed, ať se zrcadlí on, ne obloha
+	fold = glsl(Bc, 'fold', 'krasohled_mirrors.glsl', 1300, 300, ['uM0', 'uM1'], (ctr,))   # kaleidoskop (stejný shader jako Krasohled)
+	setp(fold, 'vec1valuez', 1.78); setp(fold, 'vec1valuey', 4)
+	fmix = mk(Bc, crossTOP, 'fold_mix', 1450, 300, (look, fold))      # kaleidoskop se plynule prolne, neskočí
+	tr = trails(Bc, fmix, 1600, 300)
+	glow = bloom(Bc, tr, 2300, 300, "0.5")
+	mk(Bc, nullTOP, 'out1', 2900, 300, (glow,))

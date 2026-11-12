@@ -47,7 +47,11 @@ Audio-reaktivní projekce na průhledné plátno. Projekt: `DJ_Show.toe` (TouchD
 ## Scéna Pták
 Racek ze stock videa vyříznutý z oblohy: na každý kopák máchne křídly (rychlost mávání podle tempa),
 na silný úder se rozpadne na částice a zase složí, za ním zůstávají světelné stopy (delší při plné hudbě).
-Záložka **Pták**: síla máchnutí, rozpad na částice, stopy, rychlost videa, velikost částic, jas.
+Vnitřní režisér střídá looky podle hudby (klid = spíš reál, plná hudba a dropy = abstrakce):
+**Reál** (fotka), **Chronofoto** (kopie ptáka v čase jako na Mareyho fotografiích), **Slit-scan** (každá část obrazu z jiného okamžiku),
+**Inkoust** (obrys se rozpíjí do kouře), **Kaleidoskop** (pták zrcadlený do symetrického tvora).
+Záložka **Pták**: Look (AUTO nebo ruční volba), Abstrakce (jak často sahá po abstraktních lookách), síla máchnutí, rozpad na částice,
+stopy, rychlost videa, velikost částic, jas.
 
 ## Pro úpravy
 - Zdrojáky jsou ve `src/` (Python + GLSL), TouchDesigner je čte ze souborů a změny se projeví hned.

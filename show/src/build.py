@@ -45,7 +45,7 @@ def uniforms(o, names):
 
 def glsl(parent, name, file, x, y, names, inputs=(), fmt='rgba16float', custom_res=False):
 	d = textfile(parent, name + '_dat', GL + '/' + file, x, y - 130)
-	g = mk(parent, glslTOP, name, x, y, inputs)
+	g = mk(parent, glslmultiTOP if len(inputs) > 3 else glslTOP, name, x, y, inputs)   # GLSL TOP má jen 3 vstupy
 	g.par.pixeldat = d
 	setp(g, 'format', fmt)
 	if custom_res or not inputs: res(g)
@@ -155,6 +155,8 @@ F(pg, 'Etrails', 'Ozvěny (stopy)', 0, 0, .97); F(pg, 'Ebright', 'Jas', 1.984, 0
 F(pg, 'Epixmusic', 'Pixelace podle hudby', 2, 0, 2)
 
 pg = page('Pták')
+M(pg, 'Blook', 'Look', ['auto', 'real', 'chrono', 'slit', 'ink', 'kaleido'], ['AUTO (režisér podle hudby)', 'Reál (fotka)', 'Chronofoto (kopie v čase)', 'Slit-scan (čas po pixelech)', 'Inkoust / kouř', 'Kaleidoskop'], 'auto')
+F(pg, 'Babstract', 'Abstrakce', .6, 0, 1)
 F(pg, 'Bflap', 'Síla máchnutí', 1, 0, 2); F(pg, 'Bdissolve', 'Rozpad na částice', 1, 0, 2); F(pg, 'Btrails', 'Stopy', .8, 0, 1.1)
 F(pg, 'Bspeed', 'Rychlost videa', 1, 0, 3); F(pg, 'Bsize', 'Velikost částic (px)', 1.6, .5, 5); F(pg, 'Bbright', 'Jas', 1.2, 0, 3)
 

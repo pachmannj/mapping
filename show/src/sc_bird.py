@@ -1,4 +1,11 @@
-# SCÉNA PTÁK — racek ze stock videa (Mixkit 45246, volná licence) vyříznutý z oblohy, reaguje na hudbu:
+# SCÉNA PTÁK — racek ze stock videa (Mixkit 45246, volná licence) vyříznutý z oblohy, reaguje na hudbu.
+# Vnitřní režisér střídá looky (klid = spíš reál, plná hudba a dropy = abstrakce):
+#   reál       fotka, máchnutí na beat, rozpad na částice
+#   chrono     chronofotografie (Marey): až 6 kopií ptáka z různých okamžiků, rozestup podle tempa
+#   slit       slit-scan: každý pixel z jiného okamžiku (Time Machine TOP), hloubka času podle hutnosti
+#   ink        obrys ptáka se rozpíjí do kouře proudícího šumovým polem
+#   kaleido    pták zrcadlený do symetrického tvora, zrcadla se točí s energií
+# Základní reakce:
 #   kopák   → máchnutí křídly (deformace obrazu kolem ramen), rychlost mávání podle tempa
 #   silný úder / drop → rozpad na částice, které se pružinou složí zpět
 #   hutnost a výšky → délka světelných stop a chvění částic; video plyne pomalu, konec smyčky se prolne se začátkem
@@ -25,7 +32,38 @@ def setv(o, i, v):
 def reset():
 	S.clear()
 	S.update(dict(vt=0.0, cx=.5, cy=.5, ux=1.0, uy=0.0, span=.3, phase=1.0, flapRate=1.5, idle=1.5, dis=0.0, t=0.0,
-		burst=0.0, lastBurst=-9.0, beats=0))
+		burst=0.0, lastBurst=-9.0, beats=0, look='real', lookBeat=0, lookT=0.0, avgB=0.0, lastDrop=-99.0, hue=random.random(),
+		pat=0.0, patT=0.0, jolt=0.0, mir=0.0, W=dict(LOOKS['real'])))
+
+LOOKS = {                                                  # váhy vrstev pro každý look
+	'real':    dict(real=1.0, slit=0.0, chrono=0.0, ink=0.0, fold=0.0, sat=0.0),
+	'chrono':  dict(real=.2, slit=0.0, chrono=1.0, ink=0.0, fold=0.0, sat=.55),
+	'slit':    dict(real=.0, slit=1.0, chrono=0.0, ink=.25, fold=0.0, sat=.75),
+	'ink':     dict(real=.3, slit=0.0, chrono=0.0, ink=1.0, fold=0.0, sat=.8),
+	'kaleido': dict(real=.5, slit=.6, chrono=0.0, ink=.3, fold=1.0, sat=.65),
+}
+CALM, WILD = ['real', 'chrono'], ['slit', 'ink', 'kaleido']
+
+def direct(A, dt, now, on, B):
+	"""vybere look: ručně, nebo podle hudby (fráze po 8 taktech, drop → abstrakce, klid → reál)"""
+	man = P('Blook')
+	if man != 'auto':
+		S['look'] = man; return
+	S['avgB'] += (B - S['avgB']) * min(1.0, dt / 8)
+	S['lookT'] += dt
+	ab = P('Babstract')
+	def pick(wild):
+		pool = [l for l in (WILD if wild else CALM) if l != S['look']] or (WILD if wild else CALM)
+		S['look'] = random.choice(pool); S['lookBeat'] = S['beats']; S['lookT'] = 0.0
+	if on:
+		if B - S['avgB'] > .2 and B > .55 and now - S['lastDrop'] > 15:        # drop → hned abstraktní look
+			S['lastDrop'] = now; pick(random.random() < .4 + ab * .6)
+		elif S['beats'] - S['lookBeat'] >= 32 or (S['lookT'] > 25 and S['beats'] - S['lookBeat'] < 2):
+			pick(random.random() < ab * (.25 + B * .75))
+		elif B < .2 and S['look'] in WILD and S['lookT'] > 4:             # ztichne → zpátky k reálu
+			pick(False)
+	elif S['lookT'] > 12:
+		pick(random.random() < ab * .5)
 
 def track(asp):
 	"""střed těla a osa rozpětí z masky (64×36 px, levné čtení z GPU)"""
@@ -86,6 +124,44 @@ def update(A, dt, now):
 	setv(k('key'), 0, (.05, .15, P('Bbright'), 0))
 	k('photo_lvl').par.brightness1 = max(0.0, 1.0 - S['dis'] * 1.4)        # fotka ustoupí, když se pták rozpadne
 	setv(k('mat'), 0, (P('Bsize'), rend.width, rend.height, 0))
+	# ── režie looků a jejich reakce na hudbu ──
+	direct(A, dt, now, on, B)
+	tgt = LOOKS[S['look']]; W = S['W']; kf = 1 - math.exp(-dt * 1.4)
+	for key_, val in tgt.items(): W[key_] += (val - W[key_]) * kf
+	S['hue'] += dt * (.02 + (A['centroid'] * .05 + B * .04) * on)
+	tempo = A['tempo'] if (on and A['bpm']) else 1
+	# houpání pro časové looky: pták krouží v rytmu, takže kopie v čase se rozestoupí a slit-scan má co natahovat
+	S['sway'] = S.get('sway', 0.0) + dt * (.8 + tempo * 1.2) * (1 + A['kickEnv'] * on)
+	amp = (W['chrono'] * .26 + W['slit'] * .22) * (1 + B * .6)
+	sw = k('sway').par
+	sw.tx = math.sin(S['sway']) * amp; sw.ty = math.sin(S['sway'] * .63 + 1.3) * amp * .55
+	sw.rotate = math.sin(S['sway'] * .41) * amp * 60
+	ce = k('center').par
+	ce.tx, ce.ty = .5 - S['cx'], .5 - S['cy']; ce.sx = ce.sy = 1.15 + B * .25
+	# chronofoto: rozestup kopií = půl doby (podle tempa), počet podle hutnosti, nejnovější kopie blikne na kopák
+	step = max(3, min(14, int(round((60.0 / A['bpm'] if (on and A['bpm']) else .5) * 30 / 2))))
+	for i in range(1, 6):
+		e_ = k('echo%d' % i).par; e_.blackoffset = e_.whiteoffset = min(58, i * step)
+	setv(k('chrono'), 0, (3 + round(B * 3) if on else 4, .86, .07 + A['centroid'] * .08, W['sat']))
+	setv(k('chrono'), 1, (S['hue'], A['kickEnv'] * .6 * on, 0, 0))
+	# slit-scan: hloubka času podle hutnosti, virbl ji trhne, vzor se mění po 16 dobách
+	if A['snareHit']: S['jolt'] = max(S['jolt'], A['snareHit'] * 15 * R)
+	S['jolt'] *= math.exp(-dt * 3)
+	if A['kickHit'] and S['beats'] % 16 == 0: S['patT'] = random.choice((0., 1., 2., 3.))
+	S['pat'] += (S['patT'] - S['pat']) * (1 - math.exp(-dt * .8))
+	k('slit').par.whiteoffset = min(58, 8 + (B * 40 + S['jolt']) * on + (0 if on else 20))
+	setv(k('tmap'), 0, (S['pat'], S['t'], S['cx'], S['cy']))
+	setv(k('tmap'), 1, (S['ux'], S['uy'], asp, 0))
+	# inkoust: rychlost proudění podle energie, kopák vpustí víc inkoustu
+	setv(k('ink'), 0, (S['t'], 1 + (A['energy'] * 3 + B * 2) * on, min(.985, .9 + P('Btrails') * .07), 1 + A['kickEnv'] * 2 * on))
+	setv(k('ink'), 1, (S['hue'] + .5, W['sat'], asp, 1.6 + b['air'] * 2 * on))
+	# mix looků + kaleidoskop (zrcadla se točí s energií jako u Krasohledu)
+	setv(k('look'), 0, (W['real'], W['slit'], W['chrono'], W['ink']))
+	setv(k('look'), 1, (S['hue'], W['sat'], 1.0, 0))
+	S['mir'] = (S['mir'] + dt * (8 + (A['energy'] * 40 + B * 30) * R * on) * tempo) % 360.0
+	setv(k('fold'), 0, (S['mir'] * .5, 90 + S['mir'], 45 - S['mir'] * .3, 180))
+	setv(k('fold'), 1, (90, 4, asp, 0))
+	k('fold_mix').par.cross = W['fold']
 	# ── světelné stopy: delší při plné hudbě, unáší je dozadu proti směru letu ──
 	k('fb_lvl').par.opacity = min(.93, P('Btrails') * (.55 + B * .35 + A['kickEnv'] * .1))
 	fx = k('fb_xf').par
