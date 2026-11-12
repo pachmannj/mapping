@@ -7,7 +7,7 @@ import math, random, time, json, os
 import numpy as np
 
 SHOW = '/project1/show'
-SCENES = ['krasohled', 'vortex', 'echoes', 'heat', 'bird']
+SCENES = ['krasohled', 'vortex', 'echoes', 'heat', 'bird', 'flower']
 TESTS = {'off': 0, 'grid': 1, 'white': 2, 'frame': 3}
 
 A = {}      # zvuk — čtou ho scény
@@ -198,7 +198,7 @@ def ui(now, dt):
 		'VÝSTUP %s   %d fps   %dx%d   %s' % ('PROJEKTOR ZAP' if O('projector').isOpen else 'projektor vyp', round(D['fps']),
 		         O('final').width, O('final').height, ('TEST: ' + P('Testpattern')) if P('Testpattern') != 'off' else ''),
 		('!! BLACKOUT   ' if P('Blackout') else '') + ('STROBO   ' if P('Strobe') else ''),
-		'1–5 scéna  0 auto  B blackout  F záblesk  S strobo  T test  N skladba  O projektor',
+		'1–6 scéna  0 auto  B blackout  F záblesk  S strobo  T test  N skladba  O projektor',
 	]
 	O('info').text = '\n'.join(lines)
 

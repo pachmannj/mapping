@@ -11,7 +11,7 @@ Audio-reaktivní projekce na průhledné plátno. Projekt: `DJ_Show.toe` (TouchD
 ## Klávesy (v okně TouchDesigneru / ovládání)
 | Klávesa | Akce |
 | --- | --- |
-| 1–5 | Krasohled / Vortex / Echoes / Heat / Pták |
+| 1–6 | Krasohled / Vortex / Echoes / Heat / Pták / Květ |
 | 0 | automatické střídání |
 | B | blackout (znovu = zpět) |
 | F | záblesk |
@@ -52,6 +52,12 @@ Vnitřní režisér střídá looky podle hudby (klid = spíš reál, plná hudb
 **Inkoust** (obrys se rozpíjí do kouře), **Kaleidoskop** (pták zrcadlený do symetrického tvora).
 Záložka **Pták**: Look (AUTO nebo ruční volba), Abstrakce (jak často sahá po abstraktních lookách), síla máchnutí, rozpad na částice,
 stopy, rychlost videa, velikost částic, jas.
+
+## Scéna Květ
+Generativní 3D květ: lístky rozmístěné zlatým úhlem (jako jiřina), průsvitné a zářící na černé.
+Energie hudby květ rozvine, každý kruh lístků reaguje na své frekvenční pásmo (vnější = basy, vnitřní = výšky),
+kopák pošle světelnou vlnu od středu ven, virbl květ zkroutí, hihat rozechvěje špičky.
+Záložka **Květ**: počet lístků, rozkvět, velikost, prohnutí lístků, otáčení, jas.
 
 ## Pro úpravy
 - Zdrojáky jsou ve `src/` (Python + GLSL), TouchDesigner je čte ze souborů a změny se projeví hned.

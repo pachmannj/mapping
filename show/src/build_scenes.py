@@ -213,3 +213,34 @@ def build_bird(SH):
 	tr = trails(Bc, fmix, 1600, 300)
 	glow = bloom(Bc, tr, 2300, 300, "0.5")
 	mk(Bc, nullTOP, 'out1', 2900, 300, (glow,))
+
+# ───────────────────────── KVĚT ─────────────────────────
+def build_flower(SH):
+	Fc = mk(SH, baseCOMP, 'flower', -1100, -750)
+	vd = textfile(Fc, 'flower_vert', GL + '/flower_vert.glsl', -800, 200)
+	pd = textfile(Fc, 'flower_pixel', GL + '/flower_pixel.glsl', -800, 80)
+	def fmat(name, y):
+		m = mk(Fc, glslMAT, name, -600, y); m.par.vdat = vd; m.par.pdat = pd
+		uniforms(m, ['uF0', 'uF1', 'uF2', 'uF3', 'uL0', 'uL1', 'uL2'])
+		for n_, v_ in (('vec0valuex', 1), ('vec0valuez', 1), ('vec2valuez', 1)): setp(m, n_, v_)   # bezpečné výchozí hodnoty
+		additive(m)
+		return m
+	def fgeo(name, mat, count, rows, cols, y):
+		g = mk(Fc, geometryCOMP, name, -400, y)
+		for c in list(g.children): c.destroy()
+		gr = g.create(gridSOP, 'grid'); setp(gr, 'sizex', 1); setp(gr, 'sizey', 1); setp(gr, 'rows', rows); setp(gr, 'cols', cols)
+		gr.render = gr.display = True
+		setp(g, 'instancing', True); setp(g, 'instancecountmode', 'manual'); setp(g, 'numinstances', count)
+		g.par.material = mat
+		return g
+	fgeo('geo_petals', fmat('mat_petals', 100), 89, 14, 7, 100)
+	ms = fmat('mat_seeds', -100); setp(ms, 'vec3valuez', 1)
+	fgeo('geo_seeds', ms, 500, 2, 2, -100)
+	org = mk(Fc, nullCOMP, 'origin', -400, -300)
+	cam = mk(Fc, cameraCOMP, 'cam', -200, -300); cam.par.lookat = org; cam.par.tz = 2.6; setp(cam, 'fov', 45); setp(cam, 'near', .05)
+	rend = mk(Fc, renderTOP, 'render', 0, 0)
+	rend.par.camera = cam.path; rend.par.geometry = 'geo_petals geo_seeds'
+	res(rend, 'rgba16float'); black_bg(rend); setp(rend, 'antialias', 'aa4')
+	tr = trails(Fc, rend, 200, 0)
+	glow = bloom(Fc, tr, 1000, 0, "0.8")
+	mk(Fc, nullTOP, 'out1', 1600, 0, (glow,))

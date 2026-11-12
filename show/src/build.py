@@ -5,7 +5,7 @@ import os
 
 SRC = 'src'                     # relativní cesty vůči složce projektu → složku show jde přesunout / zkopírovat
 GL = SRC + '/glsl'
-SCENES = ['krasohled', 'vortex', 'echoes', 'heat', 'bird']
+SCENES = ['krasohled', 'vortex', 'echoes', 'heat', 'bird', 'flower']
 RES = "op('/project1/show').par.Resw", "op('/project1/show').par.Resh"
 LOG = []
 
@@ -84,7 +84,7 @@ def XY(pg, name, label, d):
 	return ps
 
 pg = page('Show')
-M(pg, 'Scene', 'Scéna', ['auto'] + SCENES, ['AUTO (střídá se)', 'Krasohled', 'Vortex', 'Echoes', 'Heat', 'Pták'], 'auto')
+M(pg, 'Scene', 'Scéna', ['auto'] + SCENES, ['AUTO (střídá se)', 'Krasohled', 'Vortex', 'Echoes', 'Heat', 'Pták', 'Květ'], 'auto')
 p = pg.appendStr('Autoscenes', label='Auto: pořadí scén')[0]; p.default = p.val = ' '.join(SCENES)
 I(pg, 'Autobars', 'Auto: změna po taktech', 16, 4, 64)
 F(pg, 'Autotime', 'Auto: změna bez beatu (s)', 45, 10, 180)
@@ -160,6 +160,11 @@ F(pg, 'Babstract', 'Abstrakce', .6, 0, 1)
 F(pg, 'Bflap', 'Síla máchnutí', 1, 0, 2); F(pg, 'Bdissolve', 'Rozpad na částice', 1, 0, 2); F(pg, 'Btrails', 'Stopy', .8, 0, 1.1)
 F(pg, 'Bspeed', 'Rychlost videa', 1, 0, 3); F(pg, 'Bsize', 'Velikost částic (px)', 1.6, .5, 5); F(pg, 'Bbright', 'Jas', 1.2, 0, 3)
 
+pg = page('Květ')
+p = I(pg, 'Fpetals', 'Počet lístků', 89, 21, 600); p.clampMin = p.clampMax = True; p.min, p.max = 40, 600
+F(pg, 'Fbloom', 'Rozkvět', 1, 0, 1.5); F(pg, 'Fsize', 'Velikost', .95, .3, 2); F(pg, 'Fcup', 'Prohnutí lístků', 1, 0, 2)
+F(pg, 'Fspin', 'Otáčení', 1, 0, 3); F(pg, 'Fbright', 'Jas', 1.2, 0, 4)
+
 pg = page('Heat')
 F(pg, 'Hlife', 'Životnost bodů (s)', 1, 1, 25); F(pg, 'Hflow', 'Proudění', .701, 0, 3); F(pg, 'Hrise', 'Stoupání tepla', 0, 0, 3)
 F(pg, 'Hrows', 'Řad cihel', 100, 10, 100); F(pg, 'Hsize', 'Velikost bodů (px)', 2.384, .5, 6); F(pg, 'Hbright', 'Jas', 2.634, 0, 4)
@@ -231,8 +236,8 @@ def onKey(dat, keyInfo):
 	if f.get('ctrl') or f.get('alt') or f.get('cmd'): return
 	c = str(f.get('character', getattr(keyInfo, 'character', '')) or '').lower()
 	S = parent(); E = op('engine').module
-	scenes = ['auto', 'krasohled', 'vortex', 'echoes', 'heat', 'bird']
-	if c in '012345' and c: S.par.Scene = scenes[int(c)]
+	scenes = ['auto', 'krasohled', 'vortex', 'echoes', 'heat', 'bird', 'flower']
+	if c in '0123456' and c: S.par.Scene = scenes[int(c)]
 	elif c == 'b': S.par.Blackout = not S.par.Blackout
 	elif c == 's': S.par.Strobe = not S.par.Strobe
 	elif c == 'f': E.flash()
@@ -251,7 +256,7 @@ expr(cam, 'device', "parent().par.Cameradevice")
 # ─────────────── scény (src/build_scenes.py) ───────────────
 exec(open(SRC + '/build_scenes.py', encoding='utf-8').read())
 SKIP = globals().get('SKIP_SCENES', ())                         # ladění: scény, které se mají vynechat
-for nm, fn in (('krasohled', build_krasohled), ('vortex', build_vortex), ('echoes', build_echoes), ('heat', build_heat), ('bird', build_bird)):
+for nm, fn in (('krasohled', build_krasohled), ('vortex', build_vortex), ('echoes', build_echoes), ('heat', build_heat), ('bird', build_bird), ('flower', build_flower)):
 	if nm in SKIP:
 		X = mk(SH, baseCOMP, nm, -1100, 0); mk(X, constantTOP, 'out1', 0, 0)
 	else: fn(SH)
