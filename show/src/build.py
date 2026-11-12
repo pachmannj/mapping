@@ -150,11 +150,12 @@ F(pg, 'Vbright', 'Jas', 1.5, 0, 5); F(pg, 'Vsize', 'Velikost částic', 2, .5, 8
 F(pg, 'Vturb', 'Turbulence', 1, 0, 3); F(pg, 'Vzoom', 'Vzdálenost kamery', .65, .4, 2)
 
 pg = page('Echoes')
-F(pg, 'Epixel', 'Pixelace (krok)', .03, 0, .15); F(pg, 'Edisp', 'Posunutí (displace)', .12, 0, .5)
-F(pg, 'Etrails', 'Ozvěny (stopy)', .7, 0, .97); F(pg, 'Ebright', 'Jas', 1, 0, 2)
+F(pg, 'Epixel', 'Pixelace (základ)', 0, 0, .15); F(pg, 'Edisp', 'Posunutí (displace)', .0356, 0, .5)
+F(pg, 'Etrails', 'Ozvěny (stopy)', .58, 0, .97); F(pg, 'Ebright', 'Jas', 1.74, 0, 3)
+F(pg, 'Epixmusic', 'Pixelace podle hudby', 1, 0, 2)
 
 pg = page('Heat')
-F(pg, 'Hlife', 'Životnost bodů (s)', 8, 1, 25); F(pg, 'Hflow', 'Proudění', 1, 0, 3); F(pg, 'Hrise', 'Stoupání tepla', 1, 0, 3)
+F(pg, 'Hlife', 'Životnost bodů (s)', 5, 1, 25); F(pg, 'Hflow', 'Proudění', 1, 0, 3); F(pg, 'Hrise', 'Stoupání tepla', 1, 0, 3)
 F(pg, 'Hrows', 'Řad cihel', 40, 10, 100); F(pg, 'Hsize', 'Velikost bodů (px)', 2.4, .5, 6); F(pg, 'Hbright', 'Jas', 1.8, 0, 4)
 
 for n, v in saved.items():

@@ -60,7 +60,10 @@ def update(A, dt, now):
 	setv(g, 14, ((.3 + B * .15) * R if on else .25, S['st'], S['rays'], A['hatEnv'] * .8 * R * on))
 	# pixelace: krok kvantizace vyskočí na virbl a dozní (z videa: Limit TOP → Quantize Position → Round)
 	S['pix'] *= math.exp(-dt * 4)
-	step = P('Epixel') * (1 + S['pix'] * 2.5 + B * .5 + dev('mid', b['mid']) * 2 * on)
+	# základ = Pixelace (základ); hudba přidá: rychlejší tempo a hutnější hudba = hrubší pixely, virbl krátce „rozbije“ obraz
+	tempoPix = min(1., max(0., (A['bpm'] - 95) / 70)) if (on and A['bpm']) else 0
+	music = (tempoPix * .014 + max(0., B - .5) * .02 + S['pix'] * .016 + dev('mid', b['mid']) * .006) * on
+	step = P('Epixel') + music * P('Epixmusic') * R
 	e('limit').par.quantpos = 'round' if step > .001 else 'off'
 	e('limit').par.posstep = max(step, .001)
 	d = P('Edisp') * (1 + (dev('low', b['low']) * 1.5 + A['kickEnv'] * .4) * R * on)

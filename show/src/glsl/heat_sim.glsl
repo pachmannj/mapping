@@ -85,8 +85,8 @@ void main() {
 	float w = wave(uR0, start.xy) + wave(uR1, start.xy) + wave(uR2, start.xy) + wave(uR3, start.xy);
 	h = clamp(h * .45 + spectrum(start.xy) * uH4.x + w, 0., 1.5);       // tvar dělá hlavně spektrum, šum je jen podklad
 	float hot = smoothstep(uH1.z, uH1.z + .25, h);
-	float lift = hot * smoothstep(.15, .6, life);                               // cihla nejdřív žhne na místě, pak se z ní uvolní částice
-	vec3 v = flow(p * 1.3, t * .4) * uH0.w * .08 * lift + vec3(0., uH1.x * .25 * lift, 0.);
+	float lift = hot * smoothstep(.05, .3, life);                               // cihla nejdřív žhne na místě, pak se z ní uvolní částice
+	vec3 v = flow(p * 1.3, t * .4) * uH0.w * .22 * lift + vec3(0., uH1.x * .6 * lift, 0.);
 	vec2 away = p.xy - (uR0.w > 0. ? uR0.xy : vec2(0.));
 	v.xy += normalize(away + 1e-4) * w * .6 * (.3 + hot);
 	p += v * dt;
@@ -96,9 +96,9 @@ void main() {
 	vec3 q = p;
 	q.xy = mat2(cos(ang), -sin(ang), sin(ang), cos(ang)) * q.xy * sc;
 	q.z += hot * life * .6;
-	float fade = smoothstep(0., .08, life) * smoothstep(1., .8, life);
+	float fade = smoothstep(0., .08, life) * smoothstep(1., .55, life);             // stoupající částice vyhasnou dřív → žádný závoj přes celý obraz
 	float spark = 1. + uH4.y * step(.93, r.x) * 2.5;                              // hihat: krátké jiskření horkých bodů
-	float lum = hot * fade * uH2.w * (1. + uH3.y * .5) * mix(1., .55, lift) * spark;
+	float lum = hot * fade * uH2.w * (1. + uH3.y * .5) * mix(1., .4, lift) * spark;
 	vec3 c = mix(vec3(mix(.3, 1., h)), heatRamp(h * (.6 + life * .5)), uH2.z);
 	oPos = vec4(q, .7 + hot * .6);
 	oCol = vec4(c, clamp(lum, 0., 1.));

@@ -27,7 +27,7 @@ def update(A, dt, now):
 	if not S: S.update(dict(t=0.0, waves=[], idle=0.0, rot=0.0, rotV=0.0, rotT=0.0, scale=0.0, gate=.55, colorMix=0.0))
 	on = A['on']; R = P('Reactivity'); b = A['bands']; B = A['busy'] if on else 0
 	asp = 16 / 9
-	S['t'] += dt * (.5 + (A['energy'] * 1.2 + b['mid'] * .6) * R * on)
+	S['t'] += dt * (.9 + (A['energy'] * 2. + b['mid'] * 1.) * R * on)
 	if A['kickHit']: add_wave(0.0, 0.0, (.5 + A['kickHit'] * .6) * R)
 	if A['snareHit']:
 		add_wave(random.uniform(-asp * .8, asp * .8), random.uniform(-.8, .8), (.4 + A['snareHit'] * .5) * R)
