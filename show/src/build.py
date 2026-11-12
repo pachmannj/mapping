@@ -5,7 +5,7 @@ import os
 
 SRC = 'src'                     # relativní cesty vůči složce projektu → složku show jde přesunout / zkopírovat
 GL = SRC + '/glsl'
-SCENES = ['krasohled', 'vortex', 'echoes', 'heat', 'membrane']
+SCENES = ['krasohled', 'vortex', 'echoes', 'heat']
 RES = "op('/project1/show').par.Resw", "op('/project1/show').par.Resh"
 LOG = []
 
@@ -84,7 +84,7 @@ def XY(pg, name, label, d):
 	return ps
 
 pg = page('Show')
-M(pg, 'Scene', 'Scéna', ['auto'] + SCENES, ['AUTO (střídá se)', 'Krasohled', 'Vortex', 'Echoes', 'Heat', 'Membrána'], 'auto')
+M(pg, 'Scene', 'Scéna', ['auto'] + SCENES, ['AUTO (střídá se)', 'Krasohled', 'Vortex', 'Echoes', 'Heat'], 'auto')
 p = pg.appendStr('Autoscenes', label='Auto: pořadí scén')[0]; p.default = p.val = ' '.join(SCENES)
 I(pg, 'Autobars', 'Auto: změna po taktech', 16, 4, 64)
 F(pg, 'Autotime', 'Auto: změna bez beatu (s)', 45, 10, 180)
@@ -153,11 +153,6 @@ pg = page('Echoes')
 F(pg, 'Epixel', 'Pixelace (krok)', .03, 0, .15); F(pg, 'Edisp', 'Posunutí (displace)', .12, 0, .5)
 F(pg, 'Etrails', 'Ozvěny (stopy)', .7, 0, .97); F(pg, 'Ebright', 'Jas', 1, 0, 2)
 
-pg = page('Membrána')
-F(pg, 'Mactivity', 'Kolik toho se děje', 1, 0, 2); F(pg, 'Mbump', 'Reliéf otisku', 1, 0, 3)
-F(pg, 'Mtent', 'Napnutí látky (stan)', 1, 0, 2); F(pg, 'Mwave', 'Vibrace plátna', 1, 0, 1.5); F(pg, 'Mbright', 'Jas', 1.2, 0, 4)
-T(pg, 'Mhands', 'Ruce', True); T(pg, 'Mfeet', 'Chodidla', True); T(pg, 'Mfaces', 'Obličej', True)
-
 pg = page('Heat')
 F(pg, 'Hlife', 'Životnost bodů (s)', 8, 1, 25); F(pg, 'Hflow', 'Proudění', 1, 0, 3); F(pg, 'Hrise', 'Stoupání tepla', 1, 0, 3)
 F(pg, 'Hrows', 'Řad cihel', 40, 10, 100); F(pg, 'Hsize', 'Velikost bodů (px)', 2.4, .5, 6); F(pg, 'Hbright', 'Jas', 1.8, 0, 4)
@@ -167,8 +162,7 @@ for n, v in saved.items():
 		try: getattr(SH.par, n).val = v
 		except Exception: pass
 
-for n in SCENES:                                               # nová scéna se přidá i do uloženého pořadí auto režimu
-	if n not in SH.par.Autoscenes.eval().split(): SH.par.Autoscenes = (SH.par.Autoscenes.eval() + ' ' + n).strip()
+SH.par.Autoscenes = ' '.join([n for n in SH.par.Autoscenes.eval().split() if n in SCENES] + [n for n in SCENES if n not in SH.par.Autoscenes.eval().split()])   # pořadí auto režimu = jen existující scény
 
 # ─────────────── zvuk ───────────────
 pl = mk(SH, folderDAT, 'playlist', -1400, 600)
@@ -230,8 +224,8 @@ def onKey(dat, keyInfo):
 	if f.get('ctrl') or f.get('alt') or f.get('cmd'): return
 	c = str(f.get('character', getattr(keyInfo, 'character', '')) or '').lower()
 	S = parent(); E = op('engine').module
-	scenes = ['auto', 'krasohled', 'vortex', 'echoes', 'heat', 'membrane']
-	if c in '012345' and c: S.par.Scene = scenes[int(c)]
+	scenes = ['auto', 'krasohled', 'vortex', 'echoes', 'heat']
+	if c in '01234' and c: S.par.Scene = scenes[int(c)]
 	elif c == 'b': S.par.Blackout = not S.par.Blackout
 	elif c == 's': S.par.Strobe = not S.par.Strobe
 	elif c == 'f': E.flash()
@@ -250,7 +244,7 @@ expr(cam, 'device', "parent().par.Cameradevice")
 # ─────────────── scény (src/build_scenes.py) ───────────────
 exec(open(SRC + '/build_scenes.py', encoding='utf-8').read())
 SKIP = globals().get('SKIP_SCENES', ())                         # ladění: scény, které se mají vynechat
-for nm, fn in (('krasohled', build_krasohled), ('vortex', build_vortex), ('echoes', build_echoes), ('heat', build_heat), ('membrane', build_membrane)):
+for nm, fn in (('krasohled', build_krasohled), ('vortex', build_vortex), ('echoes', build_echoes), ('heat', build_heat)):
 	if nm in SKIP:
 		X = mk(SH, baseCOMP, nm, -1100, 0); mk(X, constantTOP, 'out1', 0, 0)
 	else: fn(SH)

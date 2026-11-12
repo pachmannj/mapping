@@ -89,8 +89,8 @@ def build_vortex(SH):
 	parts.seq.attr.numBlocks = 2
 	setp(parts, 'attr0name', 'color'); setp(parts, 'attr1name', 'pointscale')
 	setp(f, 'outputattrs', 'PartVel Color PointScale')
-	uniforms(f, ['uS%d' % i for i in range(11)])
-	for i in range(11): setp(f, 'vec%dtype' % i, 'vec4')
+	uniforms(f, ['uS%d' % i for i in range(11)] + ['uL0', 'uL1', 'uL2'])
+	for i in range(14): setp(f, 'vec%dtype' % i, 'vec4')
 	cull = mk(geo, deletePOP, 'cull', 0, 0, (f,))                     # z videa: Delete POP za poloměrem
 	setp(cull, 'invert', 'keep'); cull.seq.bound.numBlocks = 1
 	for n, v in (('bound0enabled', True), ('bound0type', 'boundingsphere'), ('bound0scalex', 7), ('bound0scaley', 7), ('bound0scalez', 7)): setp(cull, n, v)
@@ -115,7 +115,7 @@ def build_vortex(SH):
 # ───────────────────────── ECHOES 2.0 ─────────────────────────
 def build_echoes(SH):
 	E = mk(SH, baseCOMP, 'echoes', -1100, -300)
-	field = glsl(E, 'field', 'echoes_field.glsl', -800, 0, ['uE0', 'uE1', 'uE2'] + ['uR%d' % i for i in range(8)])
+	field = glsl(E, 'field', 'echoes_field.glsl', -800, 0, ['uE0', 'uE1', 'uE2'] + ['uR%d' % i for i in range(8)] + ['uL0', 'uL1', 'uL2', 'uE3'])
 	prev = field
 	for i in range(5):                                               # z videa: 5× Edge TOP, alfa = 1
 		prev = mk(E, edgeTOP, 'edge%d' % (i + 1), -600 + i * 130, 0, (prev,)); setp(prev, 'alphaoutputmenu', 'one')
@@ -125,7 +125,7 @@ def build_echoes(SH):
 	dis = mk(E, displaceTOP, 'displace', 950, 0, (fb1, lim))
 	e6 = mk(E, edgeTOP, 'edge6', 1100, 0, (dis,)); setp(e6, 'alphaoutputmenu', 'one')
 	fb2 = trails(E, e6, 1250, 0, 'fb2')                               # druhá ozvěna se zoomem 0,99
-	lv = mk(E, levelTOP, 'out_lvl', 1950, 0, (fb2,)); setp(lv, 'contrast', 1.3); setp(lv, 'blacklevel', .12)
+	lv = mk(E, levelTOP, 'out_lvl', 1950, 0, (fb2,)); setp(lv, 'contrast', 1.3); setp(lv, 'inlow', .1)
 	mk(E, nullTOP, 'out1', 2100, 0, (lv,))
 
 # ───────────────────────── HEAT 2.0 ─────────────────────────
@@ -137,7 +137,7 @@ def build_heat(SH):
 	custom_res(zero, N, N); setp(zero, 'format', 'rgba32float')
 	for n in ('colorr', 'colorg', 'colorb', 'alpha'): setp(zero, n, 0)
 	fb = mk(H, feedbackTOP, 'state', -600, 0, (zero,))
-	sim = glsl(H, 'sim', 'heat_sim.glsl', -400, 0, ['uH0', 'uH1', 'uH2', 'uH3', 'uR0', 'uR1', 'uR2', 'uR3'], (fb, start), 'rgba32float')
+	sim = glsl(H, 'sim', 'heat_sim.glsl', -400, 0, ['uH0', 'uH1', 'uH2', 'uH3', 'uR0', 'uR1', 'uR2', 'uR3', 'uL0', 'uL1', 'uL2', 'uH4'], (fb, start), 'rgba32float')
 	setp(sim, 'numcolorbufs', 3)
 	fb.par.top = sim
 	pos = mk(H, renderselectTOP, 'pos', -200, 50); pos.par.top = sim; setp(pos, 'bufferindex', 1); setp(pos, 'format', 'rgba32float')
@@ -151,43 +151,3 @@ def build_heat(SH):
 	glow = bloom(H, rend, 600, -200, "1")
 	mk(H, nullTOP, 'out1', 1200, -200, (glow,))
 
-# ───────────────────────── MEMBRÁNA ─────────────────────────
-def build_membrane(SH):
-	Mc = mk(SH, baseCOMP, 'membrane', -1100, -600)
-	ASSETS = 'assets'                                                  # relativně ke složce projektu (show/assets)
-	vd = textfile(Mc, 'depth_vert', GL + '/membrane_depth_vert.glsl', -900, 200)
-	pd = textfile(Mc, 'depth_pixel', GL + '/membrane_depth_pixel.glsl', -900, 80)
-	dm = mk(Mc, glslMAT, 'depth_mat', -700, 150); dm.par.vdat = vd; dm.par.pdat = pd
-	setp(dm, 'cullface', 'neither')
-	geos = []
-	for i in range(6):                                                 # 6 „herců“: každý je ruka, chodidlo nebo obličej
-		g = mk(Mc, geometryCOMP, 'a%d' % i, -500, 300 - i * 120)
-		for c in list(g.children): c.destroy()
-		files = []
-		for j, part in enumerate(('hand', 'foot', 'face')):
-			f = g.create(fileinSOP, part); f.nodeX, f.nodeY = j * 150, 200
-			f.par.file = ASSETS + '/%s.obj' % part
-			files.append(f)
-		pick = g.create(switchSOP, 'pick'); pick.nodeX, pick.nodeY = 150, 0
-		for j, f in enumerate(files): pick.inputConnectors[j].connect(f)
-		pick.render = pick.display = True
-		g.par.material = dm; g.par.tz = -1
-		geos.append(g)
-	cam = mk(Mc, cameraCOMP, 'cam', -500, -500)
-	setp(cam, 'projection', 'ortho'); setp(cam, 'orthowidth', 2 * 16 / 9); cam.par.tz = 5; setp(cam, 'far', 20)
-	dr = mk(Mc, renderTOP, 'depth', -300, 0)
-	dr.par.camera = cam.path; dr.par.geometry = ' '.join(g.name for g in geos)
-	custom_res(dr, 640, 360); setp(dr, 'format', 'rgba16float')
-	for n, v in (('bgcolorr', 0), ('bgcolorg', 0), ('bgcolorb', 0), ('bgcolora', 1)): setp(dr, n, v)
-	sharp = mk(Mc, blurTOP, 'sharp', -100, 80, (dr,)); setp(sharp, 'size', 9)            # látka změkčí detaily
-	tent = mk(Mc, blurTOP, 'tent', -100, -80, (dr,)); expr(tent, 'size', SHOWP + "Mtent * 20")   # stan kolem otisku
-	zero = mk(Mc, constantTOP, 'wave_zero', -300, -300); custom_res(zero, 320, 180); setp(zero, 'format', 'rgba16float')
-	for n in ('colorr', 'colorg', 'colorb', 'alpha'): setp(zero, n, 0)
-	fb = mk(Mc, feedbackTOP, 'wave_fb', -100, -300, (zero,))
-	wave = glsl(Mc, 'wave', 'membrane_wave.glsl', 100, -300, ['uW0', 'uI0', 'uI1', 'uI2', 'uI3'], (fb,))
-	fb.par.top = wave
-	for n, v in (('vec0valuex', .42), ('vec0valuey', .98)): setp(wave, n, v)      # bezpečné výchozí hodnoty
-	shade = glsl(Mc, 'shade', 'membrane_shade.glsl', 300, 0, ['uS0', 'uS1', 'uS2'], (sharp, tent, wave), custom_res=True)
-	for n, v in (('vec0valuex', 1), ('vec0valuey', .8), ('vec0valuew', 1), ('vec1valuey', .6)): setp(shade, n, v)
-	glow = bloom(Mc, shade, 500, 0, "0.6")
-	mk(Mc, nullTOP, 'out1', 1100, 0, (glow,))

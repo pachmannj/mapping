@@ -12,6 +12,7 @@ uniform vec4 uS7;   // vír 0 (xyz), velikost částic
 uniform vec4 uS8;   // vír 1
 uniform vec4 uS9;   // vír 2
 uniform vec4 uS10;  // střed komprese
+uniform vec4 uL0; uniform vec4 uL1; uniform vec4 uL2;   // 12 frekvenčních pásem (jako laloky Krasohledu)
 
 uvec3 pcg3d(uvec3 v) {
 	v = v * 1664525u + 1013904223u;
@@ -21,6 +22,12 @@ uvec3 pcg3d(uvec3 v) {
 	return v;
 }
 vec3 rnd3(uvec3 v) { return vec3(pcg3d(v)) * (2. / 4294967295.) - 1.; }
+float band(float i) {                                  // jen desetinná čísla (int z NaN shodí Vulkan na Macu)
+	i = mod(clamp(i, 0., 11.99), 12.);
+	vec4 v = i < 3.5 ? uL0 : (i < 7.5 ? uL1 : uL2);
+	float j = mod(floor(i), 4.);
+	return j < .5 ? v.x : (j < 1.5 ? v.y : (j < 2.5 ? v.z : v.w));
+}
 vec3 sn(vec3 v) { return v / max(length(v), 1e-5); }
 vec3 hash33(vec3 p) {
 	p = vec3(dot(p, vec3(127.1, 311.7, 74.7)), dot(p, vec3(269.5, 183.3, 246.1)), dot(p, vec3(113.5, 271.9, 124.6)));
@@ -79,6 +86,10 @@ void main() {
 	float radial = -.6 * uDensity * (1. - intensity * .2) + uKickTrans * react * 1.5 - uCollapse * .8 - uSustained * react * .3;
 	radial += smoothstep(1., 2., dist) * (-1.2) * uDensity;
 	radial += (1. - smoothstep(0., .7, dist)) * 1.1 * uDensity;
+	// spektrum: každé z 12 pásem tlačí plášť organismu ve svém směru (úhel kolem svislé osy) → tvar se mění s každou změnou v hudbě
+	float sec = (atan(p.z, p.x) / 6.2831853 + .5) * 12.;
+	float bnd = mix(band(floor(sec)), band(mod(floor(sec) + 1., 12.)), smoothstep(0., 1., fract(sec)));
+	radial += (bnd - .4) * 2.2 * react * smoothstep(.25, 1., dist);
 	vec3 radialF = sn(p + .001) * radial;
 	vec3 toCo = uS10.xyz - p;
 	float cd = length(toCo);

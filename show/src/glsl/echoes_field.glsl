@@ -6,6 +6,8 @@ uniform vec4 uE1;   // bloudící bod x, y (0–1), síla vlny od basy, čas vln
 uniform vec4 uE2;   // posun šumu x, -, -, -
 uniform vec4 uR0; uniform vec4 uR1; uniform vec4 uR2; uniform vec4 uR3;   // vlny: x, y (0–1), čas od úderu, síla
 uniform vec4 uR4; uniform vec4 uR5; uniform vec4 uR6; uniform vec4 uR7;
+uniform vec4 uL0; uniform vec4 uL1; uniform vec4 uL2;   // 12 frekvenčních pásem
+uniform vec4 uE3;   // síla spektra, čas kruhů, počet paprsků, síla paprsků (hihat)
 out vec4 fragColor;
 
 vec4 perm(vec4 x) { return mod(((x * 34.) + 1.) * x, 289.); }
@@ -34,6 +36,21 @@ float ring(vec4 r, vec2 p) {                          // ozvěna: kruhová vlna,
 	return r.w * exp(-pow((d - front) / .035, 2.)) * exp(-r.z * .9) + r.w * .35 * sin((d - front) * 40.) * exp(-abs(d - front) * 12.) * exp(-r.z * 1.2);
 }
 
+float band(float i) {                                  // jen desetinná čísla (int z NaN shodí Vulkan na Macu)
+	i = clamp(i, 0., 11.);
+	vec4 v = i < 3.5 ? uL0 : (i < 7.5 ? uL1 : uL2);
+	float j = mod(i, 4.);
+	return j < .5 ? v.x : (j < 1.5 ? v.y : (j < 2.5 ? v.z : v.w));
+}
+float spectrum(vec2 p) {                               // jako Krasohled: spektrum jako soustředné kruhy — basy uprostřed, výšky na okraji
+	float r = length(p);
+	float x = clamp(r / .95 * 12. - .5, 0., 11.);
+	float b = mix(band(floor(x)), band(min(floor(x) + 1., 11.)), smoothstep(0., 1., fract(x)));
+	float rings = pow(.5 + .5 * sin(r * 40. - uE3.y * 6.), 16.);
+	float rays = 1. + uE3.w * sin(atan(p.y, p.x) * uE3.z);
+	return b * rings * rays * smoothstep(1.2, .9, r);
+}
+
 void main() {
 	vec2 res = uTDOutputInfo.res.zw;
 	vec2 p = (vUV.st - .5) * vec2(res.x / res.y, 1.);
@@ -43,5 +60,6 @@ void main() {
 	vec2 m = (uE1.xy - .5) * vec2(res.x / res.y, 1.);
 	float dm = length(p - m);
 	v += sin(dm * 25. - uE1.w * 4.) * uE1.z * exp(-dm * 2.5);
+	v += spectrum(p) * uE3.x;
 	fragColor = TDOutputSwizzle(vec4(vec3(clamp(v, 0., 1.5)), 1.));
 }

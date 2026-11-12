@@ -24,12 +24,12 @@ def add_ring(x, y, amp):
 	S['rings'].append([x, y, 0.0, amp]); S['rings'] = S['rings'][-8:]
 
 def update(A, dt, now):
-	if not S: S.update(dict(t=0.0, tx=0.0, wt=0.0, rings=[], idle=0.0, rot=0.0, rotV=0.0, pix=0.0, zoom=0.0))
+	if not S: S.update(dict(t=0.0, tx=0.0, wt=0.0, rings=[], idle=0.0, rot=0.0, rotV=0.0, pix=0.0, zoom=0.0, st=0.0, rays=6.0, avg={}))
 	on = A['on']; R = P('Reactivity'); b = A['bands']; B = A['busy'] if on else 0
 	S['t'] += dt * (.1 + (b['air'] * .25 + A['hatEnv'] * .2) * R * on)        # z videa: tz = absTime/10, tx = absTime/100
 	S['tx'] += dt * .01
 	S['wt'] += dt
-	if A['kickHit']: add_ring(0.0, 0.0, (.6 + A['kickHit'] * .6) * R); S['zoom'] = max(S['zoom'], A['kickHit'] * R)
+	if A['kickHit']: add_ring(0.0, 0.0, (.6 + A['kickHit'] * .6) * R * (1 - B * .5)); S['zoom'] = max(S['zoom'], A['kickHit'] * R)
 	if A['snareHit']:
 		add_ring(random.uniform(-.7, .7), random.uniform(-.4, .4), (.5 + A['snareHit'] * .5) * R)
 		S['pix'] = max(S['pix'], A['snareHit'] * R)
@@ -47,19 +47,31 @@ def update(A, dt, now):
 	setv(g, 2, (S['tx'], 0, 0, 0))
 	for i in range(8):
 		setv(g, 3 + i, S['rings'][i] if i < len(S['rings']) else (0, 0, 0, 0))
+	# spektrum jako kruhy (jako laloky Krasohledu): reaguje na každou změnu v kterémkoli pásmu
+	avg = S['avg']
+	def dev(name, val, tau=2.5):                          # výkyv proti vlastnímu průměru — u elektra s basami naplno pořád něco dělá
+		a_ = avg.get(name, val); avg[name] = a_ + (val - a_) * (1 - math.exp(-dt / tau))
+		return max(0., min(1., (val - a_) * 2.5))
+	lob = A['LOB'] if on else [.25 + .2 * math.sin(t * .6 + i) for i in range(12)]
+	setv(g, 11, tuple(lob[0:4])); setv(g, 12, tuple(lob[4:8])); setv(g, 13, tuple(lob[8:12]))
+	tempo = A['tempo'] if (on and A['bpm']) else 1
+	S['st'] += dt * (.4 + tempo * .5 + A['kickEnv'] * 2) * (1 if on else .5)
+	if A['kickHit'] and A['beats'] % 16 == 0: S['rays'] = random.choice((4, 6, 8, 12))
+	setv(g, 14, ((.3 + B * .15) * R if on else .25, S['st'], S['rays'], A['hatEnv'] * .8 * R * on))
 	# pixelace: krok kvantizace vyskočí na virbl a dozní (z videa: Limit TOP → Quantize Position → Round)
 	S['pix'] *= math.exp(-dt * 4)
-	step = P('Epixel') * (1 + S['pix'] * 2.5 + B * .8)
+	step = P('Epixel') * (1 + S['pix'] * 2.5 + B * .5 + dev('mid', b['mid']) * 2 * on)
 	e('limit').par.quantpos = 'round' if step > .001 else 'off'
 	e('limit').par.posstep = max(step, .001)
-	d = P('Edisp') * (1 + (b['low'] * .6 + A['kickEnv'] * .8) * R * on)
+	d = P('Edisp') * (1 + (dev('low', b['low']) * 1.5 + A['kickEnv'] * .4) * R * on)
 	e('displace').par.displaceweightx = d; e('displace').par.displaceweighty = d
 	# druhá ozvěna: zoom 0,99 z videa, kopák ji krátce „nadechne“, virbl pootočí
 	S['zoom'] *= math.exp(-dt * 5)
-	S['rotV'] *= math.exp(-dt * 2); S['rot'] += S['rotV'] * dt * 20
+	S['rotV'] *= math.exp(-dt * 1.5); S['rot'] += (S['rotV'] * 20 + dev('air', b['air']) * 6 * on) * dt
 	xf = e('fb2_xf').par
 	xf.sx = xf.sy = .99 - S['zoom'] * .02
 	xf.rotate = S['rot'] * .15
-	e('fb2_lvl').par.opacity = P('Etrails')
+	e('fb2_lvl').par.opacity = P('Etrails') * (1 - B * .35)            # plná hudba = kratší ozvěny, jinak se obraz zahltí
+	e('out_lvl').par.inlow = .1 + B * .2                              # ořez slabých čar (Black Level by černou naopak zvedl)
 	e('fb1_lvl').par.brightness1 = .9
 	e('out_lvl').par.brightness1 = P('Ebright') * (1 + A['kickEnv'] * .3 * R * on)

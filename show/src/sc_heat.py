@@ -24,23 +24,26 @@ def add_wave(x, y, amp):
 	S['waves'].append([x, y, 0.0, amp]); S['waves'] = S['waves'][-4:]
 
 def update(A, dt, now):
-	if not S: S.update(dict(t=0.0, waves=[], idle=0.0, rot=0.0, rotV=0.0, scale=0.0, gate=.55, colorMix=0.0))
+	if not S: S.update(dict(t=0.0, waves=[], idle=0.0, rot=0.0, rotV=0.0, rotT=0.0, scale=0.0, gate=.55, colorMix=0.0))
 	on = A['on']; R = P('Reactivity'); b = A['bands']; B = A['busy'] if on else 0
 	asp = 16 / 9
 	S['t'] += dt * (.5 + (A['energy'] * 1.2 + b['mid'] * .6) * R * on)
 	if A['kickHit']: add_wave(0.0, 0.0, (.5 + A['kickHit'] * .6) * R)
 	if A['snareHit']:
 		add_wave(random.uniform(-asp * .8, asp * .8), random.uniform(-.8, .8), (.4 + A['snareHit'] * .5) * R)
-		S['rotV'] += (1 if random.random() < .5 else -1) * A['snareHit'] * .8 * R
+		S['rotT'] = max(-.35, min(.35, S['rotT'] + (1 if random.random() < .5 else -1) * A['snareHit'] * .12 * R))   # virbl jen posune cíl náklonu
 	if not on:
 		S['idle'] -= dt
 		if S['idle'] <= 0: add_wave(random.uniform(-1.2, 1.2), random.uniform(-.7, .7), .6); S['idle'] = random.uniform(1.5, 3.)
 	for w in S['waves']: w[2] += dt
 	S['waves'] = [w for w in S['waves'] if w[2] < 3]
-	S['rotV'] *= math.exp(-dt * 1.5)
-	S['rot'] += dt * (S['rotV'] + (b['low'] * .3 * R * on))                  # místo myši z videa: basy točí horkými body
-	S['scale'] += ((b['sub'] * .25 + A['kickEnv'] * .2) * R * on - S['scale']) * (1 - math.exp(-dt * 6))
-	gt = (.5 - B * .2) if on else .5                                       # tichá hudba = víc studených (tmavých) cihel
+	# místo myši z videa: horké body se pomalu naklání a houpou s basy — tlumená pružina, úhel max. ±0,35 rad (žádné prudké točení)
+	S['rotT'] *= math.exp(-dt * .4)
+	target = S['rotT'] + math.sin(S['t'] * .35) * .12 * (.3 + b['low'] * R * on)
+	S['rotV'] += ((target - S['rot']) * 6.0 - S['rotV'] * 4.5) * dt
+	S['rot'] += S['rotV'] * dt
+	S['scale'] += ((b['sub'] * .2 + A['kickEnv'] * .12) * R * on - S['scale']) * (1 - math.exp(-dt * 3))
+	gt = (.42 - B * .08) if on else .4                                       # tichá hudba = víc studených (tmavých) cihel
 	S['gate'] += (gt - S['gate']) * (1 - math.exp(-dt * 1.5))
 	S['colorMix'] += ((1 if P('Colour') else .35) - S['colorMix']) * (1 - math.exp(-dt * 2))
 	sim = h('sim')
@@ -50,6 +53,9 @@ def update(A, dt, now):
 	setv(sim, 3, (A['energy'], A['kickEnv'] * on, 0, 0))
 	for i in range(4):
 		setv(sim, 4 + i, S['waves'][i] if i < len(S['waves']) else (0, 0, 0, 0))
+	lob = A['LOB'] if on else [.2 + .15 * math.sin(S['t'] * .7 + i * .8) for i in range(12)]
+	setv(sim, 8, tuple(lob[0:4])); setv(sim, 9, tuple(lob[4:8])); setv(sim, 10, tuple(lob[8:12]))
+	setv(sim, 11, ((.55 + B * .35) * R if on else .35, A['hatEnv'] * R * on, asp, 0))
 	setv(h('start'), 0, (P('Hrows'), asp, .24, 0))
 	rend = h('render')
 	setv(h('mat'), 0, (P('Hsize'), rend.width, rend.height, 0))

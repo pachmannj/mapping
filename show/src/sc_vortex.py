@@ -40,22 +40,26 @@ def update(A, dt, now):
 	S['time'] += dt; t = S['time']
 	S['stateTime'] += dt
 	on = A['on']
-	x = A['vx']; s = S['s']; pv = S['prev']
-	# ── analýza po vzoru webu ──
-	kickT = max(0., (x['kick'] - pv.get('kick', x['kick'])) * 6)
-	snareT = max(0., (x['snare'] - pv.get('snare', x['snare'])) * 5)
-	hihatT = max(0., (x['hihat'] - pv.get('hihat', x['hihat'])) * 4)
-	for n in ('kick', 'snare', 'hihat'): pv[n] = x[n]
-	bass = (x['sub'] + x['kick']) * .5; mids = (x['snare'] + x['vocal']) * .5; highs = (x['hihat'] + x['cymbal']) * .5
-	energy = (bass * .4 + mids * .35 + highs * .25) * (1 if on else 0)
+	s = S['s']; pv = S['prev']; on1 = 1 if on else 0
+	# ── analýza: reaguje na ZMĚNY (údery, výkyvy pásem proti vlastnímu průměru), ne na hlasitost.
+	#    Podle hlasitosti by u elektra (basy pořád naplno) zůstala hustota i komprese na maximu → koule bez pohybu.
+	b_ = A['bands']; avg = S.setdefault('avg', {})
+	def dev(name, val, tau=2.5):
+		a_ = avg.get(name, val); avg[name] = a_ + (val - a_) * (1 - math.exp(-dt / tau))
+		return max(0., min(1., (val - a_) * 2.5))
+	x = dict(kick=A['kickEnv'], snare=A['snareEnv'], hihat=A['hatEnv'], cymbal=dev('air', b_['air']),
+	         vocal=dev('mid', b_['mid'], 4.), sub=dev('sub', b_['sub']))
+	x = {n: val * on1 for n, val in x.items()}
+	kickT = A['kickHit'] * 1.2 * on1
+	snareT = A['snareHit'] * on1
+	hihatT = (.6 if A['hats'] != pv.get('hats', A['hats']) else 0.) * on1; pv['hats'] = A['hats']
+	energy = (.05 + dev('energy', A['energy'], 3.) * .15 + A['kickEnv'] * .1 + A['busy'] * .05) * on1
 	trans = max(0., (energy - S['energyP']) * 4); S['energyP'] = energy
-	S['rhythm'] += energy * .02 * dt * 60
-	if x['vocal'] > .15 and abs(x['vocal'] - pv.get('vocal', 0)) < .03: S['sustT'] += dt
-	else: S['sustT'] = max(0., S['sustT'] - .05 * dt * 60)
-	S['sust'] = min(1., S['sustT'] * .8); pv['vocal'] = x['vocal']
+	S['rhythm'] += (.2 + energy * 4) * dt * on1
+	S['sust'] = A['sustain'] * on1
 	for n, f in (('kick', .5), ('snare', .45), ('vocal', .35), ('hihat', .5), ('cymbal', .45), ('sub', .4)):
 		s[n] += (x[n] - s[n]) * k(dt, f)
-	s['bass'] += (bass - s['bass']) * k(dt, .4); s['trans'] += (trans - s['trans']) * k(dt, .5)
+	s['bass'] += ((s['sub'] + s['kick']) * .5 - s['bass']) * k(dt, .4); s['trans'] += (trans - s['trans']) * k(dt, .5)
 	# ── autonomní cyklus (běží i bez zvuku) ──
 	S['cp'] += dt * .025 * S['cspeed']
 	if S['cp'] >= 1: S['cp'] -= 1; S['cspeed'] = .7 + random.random() * .7
@@ -72,7 +76,7 @@ def update(A, dt, now):
 	cc = (math.sin(t * .13) * 1.2 + math.sin(t * .31) * .5, math.cos(t * .17) * .6, math.cos(t * .11) * 1.0 + math.sin(t * .23) * .4, 0)
 	tI = min(1., energy * 4.) if on else autoI
 	S['intensity'] += (tI - S['intensity']) * k(dt, .4 if tI > S['intensity'] else .15)
-	comp = s['bass'] * 2.5 + s['trans'] * 2. if on else autoI
+	comp = s['sub'] * 1.2 + kickT + s['trans'] if on else autoI
 	# ── přechody stavů podle nástrojů ──
 	cur, st = S['cur'], S['stateTime']
 	if on:
@@ -86,7 +90,7 @@ def update(A, dt, now):
 	else:
 		to(0 if cp < .55 else 1 if cp < .7 else 2 if cp < .78 else 3 if cp < .88 else 4)
 	if on:
-		tw = x['kick'] * 2 + kickT * 2 + snareT * 1.5 + x['sub'] - x['hihat'] * .8 - x['cymbal'] - S['sust'] * .4
+		tw = s['kick'] * 1.5 + kickT + snareT + s['sub'] - s['hihat'] * .6 - s['cymbal'] * .8 - S['sust'] * .3
 		tw = max(0., min(1., tw)); ws = .45 if tw > S['warmth'] else .1
 	else:
 		tw = [0, .3, 1., .7, .1][S['cur']]; ws = .03
@@ -96,11 +100,11 @@ def update(A, dt, now):
 	# ── automatické parametry ──
 	R = P('Reactivity')
 	if on:
-		td_ = .8 + s['kick'] * 2 + S['sust'] * .8 + energy * .5
+		td_ = .9 + s['kick'] * .8 + S['sust'] * .4 + energy * .3
 		S['density'] = max(.5, min(2.5, S['density'] + (td_ - S['density']) * k(dt, .2)))
-		tt = .3 + s['hihat'] * 2.5 + s['cymbal'] * 2 + s['snare'] * 1.5 + energy
+		tt = .4 + s['hihat'] * 2 + s['cymbal'] * 2 + s['snare'] * 1.5 + energy * 2
 		S['turb'] = max(.2, min(3., S['turb'] + (tt - S['turb']) * k(dt, .2)))
-		tb = .8 + kickT * 2.5 + snareT * 1.5 + S['sust'] * .6 + energy * 1.2
+		tb = .9 + kickT * 1.5 + snareT + s['hihat'] * .5 + S['sust'] * .4 + energy * 1.5
 		S['bright'] = max(.5, min(3., S['bright'] + (tb - S['bright']) * k(dt, .4 if tb > S['bright'] else .06)))
 	else:
 		S['density'] += (1.1 - S['density']) * k(dt, .02); S['turb'] += (.8 - S['turb']) * k(dt, .02); S['bright'] += (1.4 - S['bright']) * k(dt, .02)
@@ -113,6 +117,8 @@ def update(A, dt, now):
 	setv(f, 5, (B[0], B[1], B[2], B[3]))
 	setv(f, 6, (B[4], S['warmth'], S['intensity'], S['bright'] * P('Vbright') * .5))
 	setv(f, 7, v0[:3] + (P('Vsize'),)); setv(f, 8, v1); setv(f, 9, v2); setv(f, 10, cc)
+	lob = A['LOB'] if on else [.35] * 12                      # jako Krasohled: 12 pásem vyboulí organismus ve 12 směrech
+	setv(f, 11, tuple(lob[0:4])); setv(f, 12, tuple(lob[4:8])); setv(f, 13, tuple(lob[8:12]))
 	# ── zrod částic ze zvukové vlny: víc hudby = víc částic ──
 	pp = v('geo/particles').par
 	if not S.get('started'):                                  # simulaci spustí až aktivní scéna (po nastavení uniform)
@@ -121,10 +127,11 @@ def update(A, dt, now):
 	pp.maxparticles = int(P('Vcount'))
 	pp.birthrate = P('Vcount') / 4.0 * P('Vbirth') * (.35 + (energy * 1.5 + kickT * .5) * on)
 	# ── kamera ──
-	camSpeed = .03 + S['intensity'] * .12 + s['bass'] * .08
-	S['camA'] += dt * camSpeed
-	S['camY'] += (math.sin(t * .1) * .6 + math.cos(t * .07) * .3 - S['camY']) * k(dt, .015)
-	r = (4.5 + math.sin(t * .08) * .4 - S['intensity']) * P('Vzoom')
+	S['camV'] = S.get('camV', 0.) * math.exp(-dt * 1.5) + (kickT * .25 + snareT * .15) * (1 if S.get('camDir', 1) > 0 else -1)
+	if snareT and random.random() < .3: S['camDir'] = -S.get('camDir', 1)                # virbl občas otočí směr
+	S['camA'] += dt * (.015 + s['vocal'] * .08 + S['camV'])
+	S['camY'] += (math.sin(t * .1) * .6 + (s['cymbal'] - s['sub']) * .8 - S['camY']) * k(dt, .03)
+	r = (4.2 + math.sin(t * .08) * .3 - s['kick'] * .6 - S['intensity'] * .4) * P('Vzoom')
 	c = v('cam').par
 	c.tx, c.ty, c.tz = math.cos(S['camA']) * r, S['camY'], math.sin(S['camA']) * r
 	v('fb_lvl').par.opacity = min(.93, .85 * P('Vtrails') * (1 - S['blend'][2] * .25))

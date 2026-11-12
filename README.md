@@ -26,11 +26,6 @@ git clone https://github.com/pachmannj/mapping.git
 3. Bez zvuku z mixu: nahraj pár skladeb do `music/`, show je přehraje a vizuály na ně reagují.
 4. Výstup na projektor: klávesa **O**. Mapování: klávesa **T** a záložka Mapping (viz `show/NÁVOD.md`).
 
-## 3D modely (scéna Membrána)
-- Ruka a chodidlo: [MakeHuman](https://github.com/makehumancommunity/makehuman) base mesh, CC0.
-- Obličej: *Infinite, 3D Head Scan* by Lee Perry-Smith, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/), based on a work at www.triplegangers.com (soubor z repozitáře [three.js](https://github.com/mrdoob/three.js)).
-- Díly v `show/assets` vyrábí `show/src/tools/make_body_parts.py` ze zdrojů v `show/assets/src`.
-
 ## Poznámky
 - Výstup je 1280×720 (omezení licence Non-Commercial), projektor si obraz zvětší.
 - Projekt obsahuje komponentu TDMCP (MCP server pro AI asistenty). Funguje jen na localhostu a na show nemá vliv.

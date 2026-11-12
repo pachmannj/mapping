@@ -8,6 +8,8 @@ uniform vec4 uH1;   // stoupání, kontrast tepla, práh tepla (maska), měřít
 uniform vec4 uH2;   // natočení horkých bodů, zvětšení horkých bodů, míra barvy, jas
 uniform vec4 uH3;   // energie, kopák, -, -
 uniform vec4 uR0; uniform vec4 uR1; uniform vec4 uR2; uniform vec4 uR3;   // vlny tepla: x, y, čas od úderu, síla
+uniform vec4 uL0; uniform vec4 uL1; uniform vec4 uL2;   // 12 frekvenčních pásem (basy vlevo → výšky vpravo)
+uniform vec4 uH4;   // síla spektra, jiskření (hihat), poměr stran, -
 layout(location = 0) out vec4 oState;
 layout(location = 1) out vec4 oPos;
 layout(location = 2) out vec4 oCol;
@@ -50,6 +52,18 @@ float wave(vec4 r, vec2 p) {
 	float d = length(p - r.xy), front = r.z * .7;
 	return r.w * exp(-pow((d - front) / .12, 2.)) * exp(-r.z * 1.1);
 }
+float band(float i) {                                  // jen desetinná čísla (int z NaN shodí Vulkan na Macu)
+	i = clamp(i, 0., 11.);
+	vec4 v = i < 3.5 ? uL0 : (i < 7.5 ? uL1 : uL2);
+	float j = mod(i, 4.);
+	return j < .5 ? v.x : (j < 1.5 ? v.y : (j < 2.5 ? v.z : v.w));
+}
+float spectrum(vec2 q) {                               // žhnoucí ekvalizér: každé pásmo rozpálí svůj sloupec do výšky podle síly
+	float x = clamp((q.x / max(uH4.z, .1) * .5 + .5) * 12. - .5, 0., 11.);
+	float b = mix(band(floor(x)), band(min(floor(x) + 1., 11.)), smoothstep(0., 1., fract(x)));
+	float top = -1. + b * 2.1;                           // výška plamene
+	return b * smoothstep(top + .05, top - .35, q.y);
+}
 vec3 heatRamp(float h) {                              // černá → tmavě rudá → oranžová → žlutá → bílá
 	vec3 c = mix(vec3(.25, .0, .0), vec3(1., .18, .02), smoothstep(0., .4, h));
 	c = mix(c, vec3(1., .65, .1), smoothstep(.35, .7, h));
@@ -69,7 +83,7 @@ void main() {
 	float h = snoise(vec3(start.xy * uH1.w, t * .3)) * .5 + .5;
 	h = clamp(.5 + (h - .5) * uH1.y, 0., 1.);
 	float w = wave(uR0, start.xy) + wave(uR1, start.xy) + wave(uR2, start.xy) + wave(uR3, start.xy);
-	h = clamp(h + w, 0., 1.5);
+	h = clamp(h * .45 + spectrum(start.xy) * uH4.x + w, 0., 1.5);       // tvar dělá hlavně spektrum, šum je jen podklad
 	float hot = smoothstep(uH1.z, uH1.z + .25, h);
 	float lift = hot * smoothstep(.15, .6, life);                               // cihla nejdřív žhne na místě, pak se z ní uvolní částice
 	vec3 v = flow(p * 1.3, t * .4) * uH0.w * .08 * lift + vec3(0., uH1.x * .25 * lift, 0.);
@@ -83,7 +97,8 @@ void main() {
 	q.xy = mat2(cos(ang), -sin(ang), sin(ang), cos(ang)) * q.xy * sc;
 	q.z += hot * life * .6;
 	float fade = smoothstep(0., .08, life) * smoothstep(1., .8, life);
-	float lum = hot * fade * uH2.w * (1. + uH3.y * .5) * mix(1., .55, lift);
+	float spark = 1. + uH4.y * step(.93, r.x) * 2.5;                              // hihat: krátké jiskření horkých bodů
+	float lum = hot * fade * uH2.w * (1. + uH3.y * .5) * mix(1., .55, lift) * spark;
 	vec3 c = mix(vec3(mix(.3, 1., h)), heatRamp(h * (.6 + life * .5)), uH2.z);
 	oPos = vec4(q, .7 + hot * .6);
 	oCol = vec4(c, clamp(lum, 0., 1.));
