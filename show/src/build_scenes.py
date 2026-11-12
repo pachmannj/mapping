@@ -220,12 +220,23 @@ def build_flower(SH):
 	src = mk(Fc, moviefileinTOP, 'frame_src', -800, 0); src.par.file = 'media/lily/f_01.jpg'
 	ph = mk(Fc, texture3dTOP, 'phases', -600, 0, (src,))                # 64 fází rozkvětu; plní je sc_flower.preload()
 	for n_, v_ in (('cachesize', 64), ('active', False), ('replacesingle', True)): setp(ph, n_, v_)
-	lily = glsl(Fc, 'lily', 'lily.glsl', -400, 0, ['uB0', 'uB1', 'uB2', 'uB3', 'uL0', 'uL1', 'uL2'], (ph,), custom_res=True)
-	for n_, v_ in (('vec0valuex', .3), ('vec1valuex', .5), ('vec1valuey', .63), ('vec1valuez', .32), ('vec1valuew', 6),
-	               ('vec3valuex', 1), ('vec3valuez', 1), ('vec3valuew', 1.78)): setp(lily, n_, v_)   # bezpečné výchozí hodnoty
-	fold = glsl(Fc, 'fold', 'krasohled_mirrors.glsl', -200, 150, ['uM0', 'uM1'], (lily,))
-	setp(fold, 'vec1valuez', 1.78); setp(fold, 'vec1valuey', 3)
-	fmix = mk(Fc, crossTOP, 'fold_mix', 0, 0, (lily, fold))
-	tr = trails(Fc, fmix, 200, 0)
-	glow = bloom(Fc, tr, 1000, 0, "0.6")
-	mk(Fc, nullTOP, 'out1', 1600, 0, (glow,))
+	arr = glsl(Fc, 'arrival', 'lily_arrival.glsl', -400, -300, [], (ph,))   # mapa času příchodu (vaří se jen po nahrání fází)
+	custom_res(arr, 720, 720)
+	ab = mk(Fc, blurTOP, 'arrival_blur', -200, -300, (arr,)); setp(ab, 'size', 6)
+	lily = glsl(Fc, 'lily', 'lily.glsl', 0, 0, ['uB0', 'uB1', 'uB2', 'uB3', 'uL0', 'uL1', 'uL2'], (ab, ph), custom_res=True)
+	for n_, v_ in (('vec0valuex', .3), ('vec1valuex', .5), ('vec1valuey', .63), ('vec1valuez', .32), ('vec1valuew', 12),
+	               ('vec3valuex', 1), ('vec3valuey', 1), ('vec3valuez', 1), ('vec3valuew', 1.78)): setp(lily, n_, v_)   # bezpečné výchozí hodnoty
+	vol = glsl(Fc, 'vol', 'lily_vol.glsl', 0, 300, ['uV0', 'uV1', 'uV2', 'uV3', 'uL0', 'uL1', 'uL2'], (ph,))
+	custom_res(vol, 960, 540)
+	for n_, v_ in (('vec0valuey', .4), ('vec1valuex', .5), ('vec1valuey', .63), ('vec1valuez', .34), ('vec1valuew', 1.78),
+	               ('vec2valuez', 1), ('vec2valuew', 1), ('vec3valuey', 8), ('vec3valuez', 1)): setp(vol, n_, v_)
+	gz = mk(Fc, constantTOP, 'grow_zero', -200, 600); setp(gz, 'format', 'rgba16float'); res(gz)
+	for n_, v_ in (('colorr', 0), ('colorg', 0), ('colorb', 0), ('alpha', 1)): setp(gz, n_, v_)
+	gfb = mk(Fc, feedbackTOP, 'grow_fb', 0, 600, (gz,))
+	grow = glsl(Fc, 'grow', 'lily_grow.glsl', 200, 600, ['uG0', 'uG1', 'uG2', 'uG3'], (gfb, ab, ph), custom_res=True)
+	gfb.par.top = grow
+	for n_, v_ in (('vec0valuez', .9), ('vec1valuex', .5), ('vec1valuey', .63), ('vec1valuew', 1.78), ('vec2valuex', 1)): setp(grow, n_, v_)
+	mix_ = glsl(Fc, 'look', 'lily_mix.glsl', 500, 0, ['uX0'], (lily, vol, grow), custom_res=True)
+	setp(mix_, 'vec0valuey', 1)
+	glow = bloom(Fc, mix_, 800, 0, "0.6")
+	mk(Fc, nullTOP, 'out1', 1400, 0, (glow,))

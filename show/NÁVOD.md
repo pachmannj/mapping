@@ -55,10 +55,12 @@ stopy, rychlost videa, velikost částic, jas.
 
 ## Scéna Květ
 Skutečná lilie z časosběru (64 fází rozkvětu načtených po startu do paměti grafiky, asi 4 s): hudba řídí, jak moc je rozkvetlá —
-v tichu se zavře do pupenu, s energií rozkvete, kopák ji „nadechne“. Vnitřní režisér střídá looky:
-**Reál**, **Spektrální kruhy** (každý prstenec v jiné fázi rozkvětu podle svého pásma), **Kubistické výseče** (výseče květu v různém čase),
-**Ozvěna rozkvětu** (fáze přes sebe, barevně posunuté), **Mandala** (zrcadlená lilie).
-Záložka **Květ**: Look, Abstrakce, citlivost rozkvětu, rozptyl fází, přiblížení, jas.
+v tichu se zavře do pupenu, s energií rozkvete, kopák ji „nadechne“. Lilie se nenaklání, nic se neozvěňuje. Z fází se jednou spočítá
+mapa času růstu (kdy do kterého místa květ doroste) a z ní žijí netradiční looky, které vnitřní režisér střídá:
+**Reál** (lilie; místo, kde právě raší, se rozsvítí na hi-hatech), **Mapa času** (vrstevnice růstu květu, každá svítí podle svého pásma,
+kopák pošle vlnu od pupenu ven), **Časová socha** (celý rozkvět jako 3D objekt — čas je hloubka, obrysy všech fází jsou svítící vrstvy,
+aktuální lilie je uvnitř), **Proudy růstu** (barva teče z rašícího okraje ve směru, kterým květ rostl, a za lístky ven do prostoru).
+Záložka **Květ**: Look, Abstrakce, citlivost rozkvětu, síla efektů, přiblížení, jas.
 
 ## Pro úpravy
 - Zdrojáky jsou ve `src/` (Python + GLSL), TouchDesigner je čte ze souborů a změny se projeví hned.

@@ -161,8 +161,8 @@ F(pg, 'Bflap', 'Síla máchnutí', 1, 0, 2); F(pg, 'Bdissolve', 'Rozpad na čás
 F(pg, 'Bspeed', 'Rychlost videa', 1, 0, 3); F(pg, 'Bsize', 'Velikost částic (px)', 1.6, .5, 5); F(pg, 'Bbright', 'Jas', 1.2, 0, 3)
 
 pg = page('Květ')
-M(pg, 'Flook', 'Look', ['auto', 'real', 'rings', 'slices', 'echo', 'mandala'], ['AUTO (režisér podle hudby)', 'Reál (lilie)', 'Spektrální kruhy', 'Kubistické výseče', 'Ozvěna rozkvětu', 'Mandala'], 'auto')
-F(pg, 'Fabstract', 'Abstrakce', .5, 0, 1); F(pg, 'Fbloom', 'Citlivost rozkvětu', 1, 0, 2); F(pg, 'Fspread', 'Rozptyl fází (kruhy, výseče)', 1, 0, 2)
+M(pg, 'Flook', 'Look', ['auto', 'real', 'map', 'sculpt', 'flow'], ['AUTO (režisér podle hudby)', 'Reál (lilie)', 'Mapa času (vrstevnice růstu)', 'Časová socha (rozkvět jako 3D objem)', 'Proudy růstu'], 'auto')
+F(pg, 'Fabstract', 'Abstrakce', .5, 0, 1); F(pg, 'Fbloom', 'Citlivost rozkvětu', 1, 0, 2); F(pg, 'Fspread', 'Síla efektů', 1, 0, 2)
 F(pg, 'Fzoom', 'Přiblížení', 1, .5, 2.5); F(pg, 'Fbright', 'Jas', 1.1, 0, 3)
 
 pg = page('Heat')
