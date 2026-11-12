@@ -11,7 +11,7 @@ Audio-reaktivní projekce na průhledné plátno. Projekt: `DJ_Show.toe` (TouchD
 ## Klávesy (v okně TouchDesigneru / ovládání)
 | Klávesa | Akce |
 | --- | --- |
-| 1–4 | Krasohled / Vortex / Echoes / Heat |
+| 1–5 | Krasohled / Vortex / Echoes / Heat / Pták |
 | 0 | automatické střídání |
 | B | blackout (znovu = zpět) |
 | F | záblesk |
@@ -43,6 +43,11 @@ Audio-reaktivní projekce na průhledné plátno. Projekt: `DJ_Show.toe` (TouchD
 | kamera je černá | vypni a zapni `Kamera zapnutá`; první spuštění chce povolení kamery v macOS |
 | výstup na špatném monitoru | `Output` → `Monitor projektoru` (0 = hlavní displej, -1 = poslední připojený) → **Otevřít výstup** |
 | obraz je šedivý / „mlha“ | zvyš `Odříznutí černé`, sniž `Master jas`, vypni haze v sále |
+
+## Scéna Pták
+Racek ze stock videa vyříznutý z oblohy: na každý kopák máchne křídly (rychlost mávání podle tempa),
+na silný úder se rozpadne na částice a zase složí, za ním zůstávají světelné stopy (delší při plné hudbě).
+Záložka **Pták**: síla máchnutí, rozpad na částice, stopy, rychlost videa, velikost částic, jas.
 
 ## Pro úpravy
 - Zdrojáky jsou ve `src/` (Python + GLSL), TouchDesigner je čte ze souborů a změny se projeví hned.

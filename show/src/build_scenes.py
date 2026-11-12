@@ -151,3 +151,36 @@ def build_heat(SH):
 	glow = bloom(H, rend, 600, -200, "1")
 	mk(H, nullTOP, 'out1', 1200, -200, (glow,))
 
+
+# ───────────────────────── PTÁK ─────────────────────────
+def build_bird(SH):
+	Bc = mk(SH, baseCOMP, 'bird', -1100, -600)
+	vid = mk(Bc, moviefileinTOP, 'video', -900, 0)
+	vid.par.file = 'media/seagull_45246.mp4'                         # relativně ke složce show
+	setp(vid, 'playmode', 'sequential'); setp(vid, 'play', True); setp(vid, 'interp', True)
+	setp(vid, 'loopcrossfadeunit', 'seconds'); setp(vid, 'loopcrossfade', 1.5)      # konec smyčky se prolne se začátkem
+	key = glsl(Bc, 'key', 'bird_key.glsl', -700, 0, ['uK0'], (vid,))
+	for n, v in (('vec0valuex', .05), ('vec0valuey', .15), ('vec0valuez', 1)): setp(key, n, v)
+	small = mk(Bc, resolutionTOP, 'mask_small', -700, -200, (key,)); custom_res(small, 64, 36)
+	flap = glsl(Bc, 'flap', 'bird_flap.glsl', -500, 0, ['uF0', 'uF1'], (key,))
+	for n, v in (('vec0valuex', .5), ('vec0valuey', .5), ('vec0valuez', 1), ('vec1valuey', .05), ('vec1valuez', .3), ('vec1valuew', 1.78)): setp(flap, n, v)
+	PW, PH = 480, 270                                                  # 130 tisíc částic = pixely ptáka
+	zero = mk(Bc, constantTOP, 'zero', -500, -300); custom_res(zero, PW, PH); setp(zero, 'format', 'rgba32float')
+	for n in ('colorr', 'colorg', 'colorb', 'alpha'): setp(zero, n, 0)
+	fb = mk(Bc, feedbackTOP, 'state', -300, -300, (zero,))
+	parts = glsl(Bc, 'parts', 'bird_parts.glsl', -100, -300, ['uP0', 'uP1', 'uP2'], (fb, flap), 'rgba32float')
+	setp(parts, 'numcolorbufs', 3); fb.par.top = parts
+	for n, v in (('vec0valuew', 3.5), ('vec1valuew', 1.78)): setp(parts, n, v)
+	pos = mk(Bc, renderselectTOP, 'pos', 100, -250); pos.par.top = parts; setp(pos, 'bufferindex', 1); setp(pos, 'format', 'rgba32float')
+	col = mk(Bc, renderselectTOP, 'col', 100, -350); col.par.top = parts; setp(col, 'bufferindex', 2); setp(col, 'format', 'rgba16float')
+	m = instmat(Bc, 'mat', pos, col, 300, -450)
+	instgeo(Bc, 'geo', m, PW * PH, 500, -450)
+	cam = mk(Bc, cameraCOMP, 'cam', 500, -600); setp(cam, 'projection', 'ortho'); setp(cam, 'orthowidth', 2 * 16 / 9); cam.par.tz = 5
+	rend = mk(Bc, renderTOP, 'render', 700, -400)
+	rend.par.camera = cam.path; rend.par.geometry = 'geo'
+	res(rend, 'rgba16float'); black_bg(rend)
+	photo = mk(Bc, levelTOP, 'photo_lvl', -300, 0, (flap,))
+	mix = mk(Bc, compositeTOP, 'mix', 900, 0, (photo, rend)); setp(mix, 'operand', 'add')
+	tr = trails(Bc, mix, 1100, 0)
+	glow = bloom(Bc, tr, 1900, 0, "0.5")
+	mk(Bc, nullTOP, 'out1', 2500, 0, (glow,))

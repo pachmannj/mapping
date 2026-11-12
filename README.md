@@ -26,6 +26,9 @@ git clone https://github.com/pachmannj/mapping.git
 3. Bez zvuku z mixu: nahraj pár skladeb do `music/`, show je přehraje a vizuály na ně reagují.
 4. Výstup na projektor: klávesa **O**. Mapování: klávesa **T** a záložka Mapping (viz `show/NÁVOD.md`).
 
+## Média
+- `show/media/seagull_45246.mp4` — „Seagull glides through the blue sky“, [Mixkit](https://mixkit.co/free-stock-video/seagull-glides-through-the-blue-sky-45246/) (Mixkit Stock Video Free License).
+
 ## Poznámky
 - Výstup je 1280×720 (omezení licence Non-Commercial), projektor si obraz zvětší.
 - Projekt obsahuje komponentu TDMCP (MCP server pro AI asistenty). Funguje jen na localhostu a na show nemá vliv.
