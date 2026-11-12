@@ -145,18 +145,18 @@ p = I(pg, 'Kaleido', 'Zrcadla (0–5)', 3, 0, 5); p.clampMin = p.clampMax = True
 F(pg, 'Feedback', 'Stopy', 1, 0, 1.1); F(pg, 'Bloom', 'Záře', 1, 0, 2); F(pg, 'Ksize', 'Velikost bodů (px)', 2, .5, 6); F(pg, 'Kbright', 'Jas', 1, 0, 3)
 
 pg = page('Vortex')
-I(pg, 'Vcount', 'Max. částic', 200000, 20000, 600000); F(pg, 'Vbirth', 'Rychlost zrodu', 1, 0, 3)
-F(pg, 'Vbright', 'Jas', 1.5, 0, 5); F(pg, 'Vsize', 'Velikost částic', 2, .5, 8); F(pg, 'Vtrails', 'Stopy', 1, 0, 1.1)
-F(pg, 'Vturb', 'Turbulence', 1, 0, 3); F(pg, 'Vzoom', 'Vzdálenost kamery', .65, .4, 2)
+I(pg, 'Vcount', 'Max. částic', 600000, 20000, 600000); F(pg, 'Vbirth', 'Rychlost zrodu', .57, 0, 3)
+F(pg, 'Vbright', 'Jas', 3.324, 0, 5); F(pg, 'Vsize', 'Velikost částic', 1.476, .5, 8); F(pg, 'Vtrails', 'Stopy', .624, 0, 1.1)
+F(pg, 'Vturb', 'Turbulence', 2.446, 0, 3); F(pg, 'Vzoom', 'Vzdálenost kamery', .4, .4, 2)
 
 pg = page('Echoes')
-F(pg, 'Epixel', 'Pixelace (základ)', 0, 0, .15); F(pg, 'Edisp', 'Posunutí (displace)', .0356, 0, .5)
-F(pg, 'Etrails', 'Ozvěny (stopy)', .58, 0, .97); F(pg, 'Ebright', 'Jas', 1.74, 0, 3)
-F(pg, 'Epixmusic', 'Pixelace podle hudby', 1, 0, 2)
+F(pg, 'Epixel', 'Pixelace (základ)', .15, 0, .15); F(pg, 'Edisp', 'Posunutí (displace)', .0076, 0, .5)
+F(pg, 'Etrails', 'Ozvěny (stopy)', 0, 0, .97); F(pg, 'Ebright', 'Jas', 1.984, 0, 3)
+F(pg, 'Epixmusic', 'Pixelace podle hudby', 2, 0, 2)
 
 pg = page('Heat')
-F(pg, 'Hlife', 'Životnost bodů (s)', 5, 1, 25); F(pg, 'Hflow', 'Proudění', 1, 0, 3); F(pg, 'Hrise', 'Stoupání tepla', 1, 0, 3)
-F(pg, 'Hrows', 'Řad cihel', 40, 10, 100); F(pg, 'Hsize', 'Velikost bodů (px)', 2.4, .5, 6); F(pg, 'Hbright', 'Jas', 1.8, 0, 4)
+F(pg, 'Hlife', 'Životnost bodů (s)', 1, 1, 25); F(pg, 'Hflow', 'Proudění', .701, 0, 3); F(pg, 'Hrise', 'Stoupání tepla', 0, 0, 3)
+F(pg, 'Hrows', 'Řad cihel', 100, 10, 100); F(pg, 'Hsize', 'Velikost bodů (px)', 2.384, .5, 6); F(pg, 'Hbright', 'Jas', 2.634, 0, 4)
 
 for n, v in saved.items():
 	if hasattr(SH.par, n):
