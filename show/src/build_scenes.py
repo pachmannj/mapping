@@ -214,33 +214,18 @@ def build_bird(SH):
 	glow = bloom(Bc, tr, 2300, 300, "0.5")
 	mk(Bc, nullTOP, 'out1', 2900, 300, (glow,))
 
-# ───────────────────────── KVĚT ─────────────────────────
+# ───────────────────────── KVĚT (skutečná lilie) ─────────────────────────
 def build_flower(SH):
 	Fc = mk(SH, baseCOMP, 'flower', -1100, -750)
-	vd = textfile(Fc, 'flower_vert', GL + '/flower_vert.glsl', -800, 200)
-	pd = textfile(Fc, 'flower_pixel', GL + '/flower_pixel.glsl', -800, 80)
-	def fmat(name, y):
-		m = mk(Fc, glslMAT, name, -600, y); m.par.vdat = vd; m.par.pdat = pd
-		uniforms(m, ['uF0', 'uF1', 'uF2', 'uF3', 'uL0', 'uL1', 'uL2'])
-		for n_, v_ in (('vec0valuex', 1), ('vec0valuez', 1), ('vec2valuez', 1)): setp(m, n_, v_)   # bezpečné výchozí hodnoty
-		additive(m)
-		return m
-	def fgeo(name, mat, count, rows, cols, y):
-		g = mk(Fc, geometryCOMP, name, -400, y)
-		for c in list(g.children): c.destroy()
-		gr = g.create(gridSOP, 'grid'); setp(gr, 'sizex', 1); setp(gr, 'sizey', 1); setp(gr, 'rows', rows); setp(gr, 'cols', cols)
-		gr.render = gr.display = True
-		setp(g, 'instancing', True); setp(g, 'instancecountmode', 'manual'); setp(g, 'numinstances', count)
-		g.par.material = mat
-		return g
-	fgeo('geo_petals', fmat('mat_petals', 100), 89, 14, 7, 100)
-	ms = fmat('mat_seeds', -100); setp(ms, 'vec3valuez', 1)
-	fgeo('geo_seeds', ms, 500, 2, 2, -100)
-	org = mk(Fc, nullCOMP, 'origin', -400, -300)
-	cam = mk(Fc, cameraCOMP, 'cam', -200, -300); cam.par.lookat = org; cam.par.tz = 2.6; setp(cam, 'fov', 45); setp(cam, 'near', .05)
-	rend = mk(Fc, renderTOP, 'render', 0, 0)
-	rend.par.camera = cam.path; rend.par.geometry = 'geo_petals geo_seeds'
-	res(rend, 'rgba16float'); black_bg(rend); setp(rend, 'antialias', 'aa4')
-	tr = trails(Fc, rend, 200, 0)
-	glow = bloom(Fc, tr, 1000, 0, "0.8")
+	src = mk(Fc, moviefileinTOP, 'frame_src', -800, 0); src.par.file = 'media/lily/f_01.jpg'
+	ph = mk(Fc, texture3dTOP, 'phases', -600, 0, (src,))                # 64 fází rozkvětu; plní je sc_flower.preload()
+	for n_, v_ in (('cachesize', 64), ('active', False), ('replacesingle', True)): setp(ph, n_, v_)
+	lily = glsl(Fc, 'lily', 'lily.glsl', -400, 0, ['uB0', 'uB1', 'uB2', 'uB3', 'uL0', 'uL1', 'uL2'], (ph,), custom_res=True)
+	for n_, v_ in (('vec0valuex', .3), ('vec1valuex', .5), ('vec1valuey', .63), ('vec1valuez', .32), ('vec1valuew', 6),
+	               ('vec3valuex', 1), ('vec3valuez', 1), ('vec3valuew', 1.78)): setp(lily, n_, v_)   # bezpečné výchozí hodnoty
+	fold = glsl(Fc, 'fold', 'krasohled_mirrors.glsl', -200, 150, ['uM0', 'uM1'], (lily,))
+	setp(fold, 'vec1valuez', 1.78); setp(fold, 'vec1valuey', 3)
+	fmix = mk(Fc, crossTOP, 'fold_mix', 0, 0, (lily, fold))
+	tr = trails(Fc, fmix, 200, 0)
+	glow = bloom(Fc, tr, 1000, 0, "0.6")
 	mk(Fc, nullTOP, 'out1', 1600, 0, (glow,))

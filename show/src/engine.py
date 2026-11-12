@@ -250,6 +250,9 @@ def step():
 	if not A: reset_audio()
 	now = time.time(); dt = min(.05, now - D.get('last', now - 1 / 60)); D['last'] = now
 	A['linked'] = link_sync()
+	for name in SCENES:                                  # scény, které si potřebují něco načíst předem (např. fáze lilie)
+		m = O('sc_' + name).module
+		if hasattr(m, 'preload'): m.preload()
 	devices(now)
 	analyse(now, dt)
 	direct(now, dt)

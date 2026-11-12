@@ -28,6 +28,7 @@ git clone https://github.com/pachmannj/mapping.git
 
 ## Média
 - `show/media/seagull_45246.mp4` — „Seagull glides through the blue sky“, [Mixkit](https://mixkit.co/free-stock-video/seagull-glides-through-the-blue-sky-45246/) (Mixkit Stock Video Free License).
+- `show/media/lily_34700.mp4` + `show/media/lily/` (64 fází) — „Lily blooming on black background“, [Mixkit](https://mixkit.co/free-stock-video/lily-blooming-on-black-background-34700/) (Mixkit Stock Video Free License).
 
 ## Poznámky
 - Výstup je 1280×720 (omezení licence Non-Commercial), projektor si obraz zvětší.

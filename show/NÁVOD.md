@@ -54,10 +54,11 @@ Záložka **Pták**: Look (AUTO nebo ruční volba), Abstrakce (jak často sahá
 stopy, rychlost videa, velikost částic, jas.
 
 ## Scéna Květ
-Generativní 3D květ: lístky rozmístěné zlatým úhlem (jako jiřina), průsvitné a zářící na černé.
-Energie hudby květ rozvine, každý kruh lístků reaguje na své frekvenční pásmo (vnější = basy, vnitřní = výšky),
-kopák pošle světelnou vlnu od středu ven, virbl květ zkroutí, hihat rozechvěje špičky.
-Záložka **Květ**: počet lístků, rozkvět, velikost, prohnutí lístků, otáčení, jas.
+Skutečná lilie z časosběru (64 fází rozkvětu načtených po startu do paměti grafiky, asi 4 s): hudba řídí, jak moc je rozkvetlá —
+v tichu se zavře do pupenu, s energií rozkvete, kopák ji „nadechne“. Vnitřní režisér střídá looky:
+**Reál**, **Spektrální kruhy** (každý prstenec v jiné fázi rozkvětu podle svého pásma), **Kubistické výseče** (výseče květu v různém čase),
+**Ozvěna rozkvětu** (fáze přes sebe, barevně posunuté), **Mandala** (zrcadlená lilie).
+Záložka **Květ**: Look, Abstrakce, citlivost rozkvětu, rozptyl fází, přiblížení, jas.
 
 ## Pro úpravy
 - Zdrojáky jsou ve `src/` (Python + GLSL), TouchDesigner je čte ze souborů a změny se projeví hned.
