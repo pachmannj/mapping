@@ -115,6 +115,9 @@ def update(A, dt, now):
 	setv(f, 7, v0[:3] + (P('Vsize'),)); setv(f, 8, v1); setv(f, 9, v2); setv(f, 10, cc)
 	# ── zrod částic ze zvukové vlny: víc hudby = víc částic ──
 	pp = v('geo/particles').par
+	if not S.get('started'):                                  # simulaci spustí až aktivní scéna (po nastavení uniform)
+		S['started'] = True
+		pp.play = True; pp.initializepulse.pulse(); pp.startpulse.pulse()
 	pp.maxparticles = int(P('Vcount'))
 	pp.birthrate = P('Vcount') / 4.0 * P('Vbirth') * (.35 + (energy * 1.5 + kickT * .5) * on)
 	# ── kamera ──

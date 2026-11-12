@@ -11,7 +11,7 @@ Audio-reaktivní projekce na průhledné plátno. Projekt: `DJ_Show.toe` (TouchD
 ## Klávesy (v okně TouchDesigneru / ovládání)
 | Klávesa | Akce |
 | --- | --- |
-| 1–4 | Krasohled / Vortex / Echoes / Heat |
+| 1–5 | Krasohled / Vortex / Echoes / Heat / Membrána |
 | 0 | automatické střídání |
 | B | blackout (znovu = zpět) |
 | F | záblesk |
@@ -43,6 +43,12 @@ Audio-reaktivní projekce na průhledné plátno. Projekt: `DJ_Show.toe` (TouchD
 | kamera je černá | vypni a zapni `Kamera zapnutá`; první spuštění chce povolení kamery v macOS |
 | výstup na špatném monitoru | `Output` → `Monitor projektoru` (0 = hlavní displej, -1 = poslední připojený) → **Otevřít výstup** |
 | obraz je šedivý / „mlha“ | zvyš `Odříznutí černé`, sniž `Master jas`, vypni haze v sále |
+
+## Scéna Membrána
+Přes obraz je napnuté plátno a zezadu se do něj tlačí ruce, chodidla a obličej podle hudby:
+kopák = dlaň (při plné hudbě chodidlo) udeří do plátna a rozvibruje ho, virbl = druhá ruka, držené tóny / zpěv = vynoří se obličej,
+ticho = ruka se pomalu přitiskne a táhne plátno do strany. Barva napnutých míst se mění s hudbou, rovné plátno zůstává černé.
+Záložka **Membrána**: kolik toho se děje, reliéf, napnutí látky, vibrace, jas a které části těla se smí objevit.
 
 ## Pro úpravy
 - Zdrojáky jsou ve `src/` (Python + GLSL), TouchDesigner je čte ze souborů a změny se projeví hned.
