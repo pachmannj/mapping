@@ -127,11 +127,11 @@ def _update(A, dt, now, solo):
 	beat_s = 60.0 / max(60.0, bpm)
 	if on and A['kickHit'] and (S['t'] - S.get('lastK', -9) > 1.8 * beat_s or (A['kickHit'] > .95 and S['t'] - S.get('lastK', -9) > .9 * beat_s)):
 		S['lastK'] = S['t']
-		H.insert(0, [S['t'], min(1.3, .6 + A['kickHit'] * .8) * R * (1 + surge * .3), 0.0, -1.3])
+		H.insert(0, [S['t'], min(1.3, .6 + A['kickHit'] * .8) * R * (1 + surge * .3) * (.55 if solo else 1.0), 0.0, -1.3])
 	if on and A['snareHit'] > .55 and S['t'] - S.get('lastS', -9) > 3.6 * beat_s:
 		S['lastS'] = S['t']
 		side = 1.0 if S.get('sside', 1) > 0 else -1.0; S['sside'] = -side
-		H.insert(0, [S['t'], min(.8, .3 + A['snareHit'] * .5) * R, side * 1.2, 1.4])
+		H.insert(0, [S['t'], min(.8, .3 + A['snareHit'] * .5) * R * (.5 if solo else 1.0), side * 1.2, 1.4])
 	del H[4:]
 	g = q('sim')
 	setv(g, 0, (S['t'], bloom, breathe, flutter))
@@ -145,11 +145,12 @@ def _update(A, dt, now, solo):
 		h = H[i] if i < len(H) else [-99.0, 0.0, 0.0, 0.0]
 		setv(g, 8 + i, (S['t'] - h[0], h[1], h[2], h[3]))
 	# délka mávnutí podle tempa (~1 doba), rychlost šíření vlny kyticí roste s tempem
-	setv(g, 12, (min(1.8, max(.8, 2.0 * 60.0 / max(60.0, bpm))), 1.3 * (bpm / 120.0), 0, 0))   # mávnutí ~2 doby, vlna pomalu
+	flapT = min(1.8, max(.8, 2.0 * 60.0 / max(60.0, bpm))) * (1.6 if solo else 1.0)   # Květ: mávnutí delší a měkčí (plave)
+	setv(g, 12, (flapT, 1.3 * (bpm / 120.0), 0, 0))   # mávnutí ~2 doby, vlna pomalu
 	# KVĚT (jedna květina): druh A → B, morf, otočení, velikost — vybírá sc_flower.py podle beatu a písničky
 	if solo:
-		ta, tb, m, spin, size = solo(S, A, dt, now, dict(on=on, bp=S['bp'], bpm=bpm, inten=inten, surge=surge, kR=kR))
-		setv(g, 13, (1, ta, tb, m)); setv(g, 14, (spin, size, 0, 0))
+		ta, tb, m, spin, (size, infl, tilt) = solo(S, A, dt, now, dict(on=on, bp=S['bp'], bpm=bpm, inten=inten, surge=surge, kR=kR))
+		setv(g, 13, (1, ta, tb, m)); setv(g, 14, (spin, size, infl, tilt))
 	else:
 		setv(g, 13, (0, 0, 0, 0)); setv(g, 14, (0, 1, 0, 0))
 	# kamera: LÉTÁ OKOLO KYTICE, rychlost svázaná s tempem (1 oběh za 8 taktů = 32 dob), rozjezd a drop ji zrychlí;
@@ -159,7 +160,7 @@ def _update(A, dt, now, solo):
 	S['ang'] += dt * orbit * P('Qcam')
 	push = lp('push', (eS * .15 + surge * .4) * on * P('Qcam'), dt, 1.5, .6)
 	bx = S['bp'] % 1.0
-	push += (math.exp(-bx * 2.0) * min(1.0, bx / .15)) * kR * .05 * P('Qcam')   # kamera se na každou dobu nadechne
+	if not solo: push += (math.exp(-bx * 2.0) * min(1.0, bx / .15)) * kR * .05 * P('Qcam')   # kamera se na každou dobu nadechne
 	a = math.sin(S['ang']) * .35 if solo else S['ang']   # Květ: kamera zůstává zepředu, jen se mírně kolébá (zboku květ není hezký)
 	rad = (4.0 if solo else 4.7) - push + .5 * math.sin(S['bp'] * math.pi / 16)  # přiblížení a oddálení po 8 dobách
 	cx, cy, cz = math.sin(a) * rad, (.25 if solo else .7) + (.25 if solo else .6) * math.sin(S['bp'] * math.pi / 8), math.cos(a) * rad
@@ -180,10 +181,10 @@ def _update(A, dt, now, solo):
 	# PULZ ZNAKŮ NA BEAT: kopák znaky prudce zvětší (nájezd ze středu), během doby se zase zmenší; drop ještě víc
 	if on and A['kickHit']: S['cpT'] = max(S.get('cpT', 0.0), min(1.0, .5 + A['kickHit'] * .6) * (1 + surge * .6))
 	S['cpT'] = S.get('cpT', 0.0) * math.exp(-dt * 4.5)
-	cp = lp('cp', S['cpT'], dt, 30.0, 30.0)
+	cp = lp('cp', S['cpT'], dt, 5.0, 2.5) * .6 if solo else lp('cp', S['cpT'], dt, 30.0, 30.0)   # Květ: znaky dýchají měkce
 	cell *= 1 + cp * 1.4 * P('Qcellbeat')
 	setv(q('ascii'), 0, (cell * P('Qcell') / 9.0, sty, 2.1, 0))   # pod znaky už nejsou vidět původní body
-	setv(q('ascii'), 1, (S['t'], min(.8, scr), P('Qcolor'), 0))
+	setv(q('ascii'), 1, (S['t'], 0 if solo else min(.8, scr), P('Qcolor'), 0))
 	r = q('render')
 	setv(q('mat'), 0, (P('Qsize'), r.width, r.height, 0))
 	setv(q('mat'), 1, (S['focus'], 12 * P('Qdof') + .01, 5, 14))

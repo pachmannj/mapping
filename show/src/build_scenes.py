@@ -222,6 +222,9 @@ def build_bouquet(SH, name='bouquet', x=-1100, y=-900, ty=.75):
 	rend = mk(Q, renderTOP, 'render', 400, -300)
 	rend.par.camera = cam.path; rend.par.geometry = 'geo'
 	res(rend, 'rgba16float'); black_bg(rend); setp(rend, 'numcolorbufs', 3)
+	# ve znacích stačí body kreslit v polovičním rozlišení (obraz se stejně rozloží na buňky) → grafika má rezervu, nic se netrhá
+	half = " * (1 if op('/project1/show').par.Qstyle == 'points' else .5)"
+	expr(rend, 'resolutionw', RES[0] + half); expr(rend, 'resolutionh', RES[1] + half)
 	# hloubka ostrosti po vrstvách: středně a hodně rozostřené světlo se rozmaže jako celý obraz (levné, bez trhání)
 	l1 = mk(Q, renderselectTOP, 'dof_mid', 400, -500); l1.par.top = rend; setp(l1, 'bufferindex', 1); setp(l1, 'format', 'rgba16float')
 	l2 = mk(Q, renderselectTOP, 'dof_far', 400, -650); l2.par.top = rend; setp(l2, 'bufferindex', 2); setp(l2, 'format', 'rgba16float')
@@ -229,7 +232,7 @@ def build_bouquet(SH, name='bouquet', x=-1100, y=-900, ty=.75):
 	b2 = mk(Q, blurTOP, 'dof_far_blur', 600, -650, (l2,)); setp(b2, 'size', 18)
 	dof = mk(Q, compositeTOP, 'dof', 800, -300, (rend, b1, b2)); setp(dof, 'operand', 'add')
 	gl = mk(Q, moviefileinTOP, 'glyphs', 800, -500); gl.par.file = 'media/glyphs.png'   # atlas znaků (tools/make_glyphs.py)
-	asc = glsl(Q, 'ascii', 'bouquet_ascii.glsl', 1000, -300, ['uS0', 'uS1'], (dof, gl))
+	asc = glsl(Q, 'ascii', 'bouquet_ascii.glsl', 1000, -300, ['uS0', 'uS1'], (dof, gl), custom_res=True)   # znaky v plném rozlišení
 	for n_, v_ in (('vec0valuex', 9), ('vec0valuey', 1), ('vec0valuez', 1.6), ('vec1valuez', 1)): setp(asc, n_, v_)
 	glow = bloom(Q, asc, 1200, -300, "0.7")
 	mk(Q, nullTOP, 'out1', 1800, -300, (glow,))

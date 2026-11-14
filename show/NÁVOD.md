@@ -71,11 +71,15 @@ Výsledek se převádí **na znaky jako Kytice a Květ** (styl, velikost podle t
 Záložka **Pták**: síla máchnutí, světelné stopy, barevný lem, rastr z teček, rychlost videa, velikost ptáka, jas.
 
 ## Scéna Květ
-Jedna velká **lilie** ze svítících bodů ve **stejném nastavení jako Kytice** (znaky / písmena / body, rytmus, rány, mávání,
-pulz znaků na beat, barvy podle hudby; posuvníky v záložce Kytice platí i tady). Lilie se otáčí kolem své osy, s tempem
-a rozjezdem rychleji; kamera zůstává zepředu a jen se mírně kolébá.
-Záložka **Květ**: otáčení květu (a rychlost přepínání druhů — platí, jen když se v `src/sc_flower.py` do ORDER přidají další druhy:
-chryzantéma, pivoňka, tulipán, kopretina, růže; pak se květ podle beatu proměňuje z jednoho druhu do dalšího).
+Jedna velká **lilie** ze svítících bodů ve stylu Kytice (znaky / písmena / body, barvy podle hudby; posuvníky v záložce Kytice
+platí i tady), ale **plave plynule jako Vortex**: měkké mávnutí na rány, znaky dýchají bez cukání a nemíchají se.
+- **Dlouhý tón / zpěv**: dokud tón drží (hlasité stálé středy, které vyčnívají nad průměr písničky), lilie se nafukuje, rozevírá
+  a kolem ní houstne svítící atmosféra; čím déle tón trvá, tím víc (plno za ~3 s). Když tón skončí, pomalu se stáhne.
+- **Náklon v rytmu**: celá rostlina se kolébá od paty stonku jako ve větru (po taktech, silněji s výrazným rytmem).
+- **Rozjezd písničky**: lilie se začne točit rychleji a zvětší se.
+- Kamera zůstává zepředu a jen se mírně kolébá.
+Záložka **Květ**: nafouknutí dlouhým tónem, náklon v rytmu, otáčení květu (a rychlost přepínání druhů — jen když se v
+`src/sc_flower.py` do ORDER přidají další druhy).
 
 ## Scéna Kytice
 Kytice se zobrazuje **ve znacích**: obraz se rozdělí na buňky jako terminál a každá buňka dostane znak podle toho, kolik je v ní

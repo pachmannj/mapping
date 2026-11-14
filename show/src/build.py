@@ -161,6 +161,7 @@ F(pg, 'Bspeed', 'Rychlost videa', 1, 0, 3); F(pg, 'Bsize', 'Velikost ptáka', 1,
 
 pg = page('Květ')                                      # jedna květina; vzhled a reakce bere ze záložky Kytice
 F(pg, 'Fswitch', 'Rychlost přepínání druhů', 1, .25, 4); F(pg, 'Fspin', 'Otáčení květu', 1, 0, 3)
+F(pg, 'Finflate', 'Nafouknutí dlouhým tónem', 1, 0, 2); F(pg, 'Flean', 'Náklon v rytmu', 1, 0, 2)
 
 pg = page('Kytice')
 M(pg, 'Qstyle', 'Styl', ['ascii', 'letters', 'points'], ['ASCII znaky', 'Písmena', 'Body'], 'ascii'); F(pg, 'Qcell', 'Velikost znaku (px)', 9, 4, 24); F(pg, 'Qcellbeat', 'Pulz znaků na beat', 1, 0, 3)

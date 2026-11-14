@@ -15,7 +15,7 @@ uniform vec4 uL0; uniform vec4 uL1; uniform vec4 uL2;   // 12 frekvenčních pá
 uniform vec4 uH0; uniform vec4 uH1; uniform vec4 uH2; uniform vec4 uH3;   // RÁNY: stáří (s), síla, odkud x, y
 uniform vec4 uH4;   // délka mávnutí (s), rychlost šíření vlny (jednotek/s), -, -
 uniform vec4 uM0;   // KVĚT: jedna květina (0/1), druh A, druh B, morf A → B (0–1)
-uniform vec4 uM1;   // KVĚT: otočení květu kolem osy (rad), velikost, -, -
+uniform vec4 uM1;   // KVĚT: otočení květu kolem osy (rad), velikost, nafouknutí dlouhým tónem (0–1), náklon v rytmu (rad)
 uniform vec4 uA4;   // RYTMUS: poloha v taktu (0–4 doby, plynule podle tempa), síla kopáku, síla virblu, síla hi-hatů
 layout(location = 0) out vec4 oPos;
 layout(location = 1) out vec4 oCol;
@@ -190,10 +190,18 @@ void main() {
 	float fr = row / H;
 	float id = fr < .16 ? 0. : (fr < .27 ? 1. : (fr < .37 ? 2. : (fr < .46 ? 3. : (fr < .55 ? 4. :
 	          (fr < .66 ? 5. : (fr < .76 ? 6. : (fr < .84 ? 7. : (fr < .91 ? 8. : (fr < .97 ? 9. : 10.)))))))));
-	if (uM0.x > .5) id = fr < .97 ? 0. : 10.;
+	if (uM0.x > .5) id = fr < (.97 - uM1.z * .12) ? 0. : 10.;   // dlouhý tón: víc bodů jde do atmosféry
 	vec3 P; vec3 col; float alpha = .12, size = 1.;
 	if (id > 9.5) {                                     // pyl a mlha volně ve vzduchu, proudí polem
 		vec3 q = (vec3(r1, r2, r3) - .5) * vec3(4.5, 3.2, 3.);
+		if (uM0.x > .5) {                                // Květ: atmosféra = oblak kolem květu, s dlouhým tónem se rozšíří a rozzáří
+			vec3 dir = normalize(vec3(r1, r2, r3) - .5 + 1e-4);
+			q = dir * (.6 + pow(r4, .5) * (1.2 + uM1.z * 1.6)) * (1. + uM1.y * .2);
+			q += noise3(q * .7 + ph * .15) * (.25 + uM1.z * .4);
+			oPos = vec4(q, .8 + r4 * 1.2);
+			oCol = vec4(mix(vec3(.8, .6, 1.), hueRot(vec3(1., .4, .8), uA2.x), .5) * (.008 + r4 * .03) * (1. + uM1.z * 6.) * uA1.w, 1.);   // bez tónu skoro neviditelná
+			return;
+		}
 		q += noise3(q * .6 + ph * .08) * .35 + vec3(0., fract(r4 + t * .01) * .4, 0.);
 		float keep = step(.7, r1);                         // jen pětina pylu je vidět, zbytek by dělal zrno
 		oPos = vec4(q, (.8 + r4) * keep); oCol = vec4(vec3(.8, .75, 1.) * (.05 + r4 * .12) * uA1.w * keep, 1.);
@@ -214,7 +222,7 @@ void main() {
 	env = hitFlap(uH0, at, T, spd, bx) + hitFlap(uH1, at, T, spd, bx) + hitFlap(uH2, at, T, spd, bx) + hitFlap(uH3, at, T, spd, bx);
 	env = env / (1. + env * .35);                         // víc ran naráz se sčítá, ale měkce (nepřestřelí)
 	// rozkvět: společná energie + vlastní pásmo + mávnutí z rány
-	float open = clamp(uA0.y * .4 + bnd * .3 - .12 + env * 1.0, .04, 1.);
+	float open = clamp(uA0.y * .4 + bnd * .3 - .12 + env * 1.0 + (solo ? uM1.z * .35 : 0.), .04, 1.);
 	// vítr: celý květ se kývá na stonku (plynulé pole, každá květina v jiné fázi), s energií silněji
 	vec3 sway = noise3(vec3(fid * 2.3, ph * .35, fid * .7)) * uA3.y * (.04 + bnd * .04);
 	// houpání v taktu: celá kytice se kolébá tam a zpět jednou za takt (2 doby na každou stranu)
@@ -272,12 +280,17 @@ void main() {
 	// chvění lístků (špičky víc), plynulé
 	if (uA0.w > .02) P += noise3(P * 2.3 + vec3(ph * .6, ph * .45, fid)) * uA0.w * .005 * (.3 + waveUV);
 	// rozpad do mlhy: jen část bodů (r4^3) odplyne s proudem pole, s hudbou se vrátí
-	float dis = uA1.z * pow(r4, 3.) * (.4 + waveUV);
+	float dis = (uA1.z + (solo ? uM1.z * .35 : 0.)) * pow(r4, 3.) * (.4 + waveUV);
 	if (dis > .002) P += noise3(P * .8 + ph * .3) * dis * .6;   // většina bodů mlhu nepočítá (šetří grafiku)
 	alpha *= (1. - dis * .5);
 	// barvy: lilie blikne na kopák, květy dýchají s pásmem
 	float glow = (.5 + bnd * .8) * (.8 + env * .9) * (solo || (type > 1.5 && type < 2.5) ? 1. + uA2.y * .5 : 1.);
 	col = mix(vec3(dot(col, vec3(.33))), col, uA2.z);
+	if (solo) {                                          // náklon v rytmu: celá rostlina se nakloní od paty stonku jako ve větru
+		vec3 pv = vec3(0., -2.4, -.6);
+		float ct = cos(uM1.w), st = sin(uM1.w);
+		vec3 d = P - pv; P = pv + vec3(d.x * ct - d.y * st, d.x * st + d.y * ct, d.z);
+	}
 	oPos = vec4(P, size * (1. + wv * .3));
 	oCol = vec4(col * alpha * 1.7 * glow * uA1.w * (1. + wv * 1.), 1.);
 }

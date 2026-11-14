@@ -31,8 +31,30 @@ def species(St, A, dt, now, x):
 		dur = max(.35, min(1.4, beat_s * (1.5 if every <= 2 else 2.5)))   # proměna trvá 1,5–2,5 doby
 		F['m'] += dt / dur
 		if F['m'] >= 1.0: F['i'] = F['j']; F['m'] = 0.0; F['morph'] = False
-	F['spin'] += dt * (.12 + (inten * .5 + x['surge'] * .8) * on) * (x['bpm'] / 120.0) * P('Fspin')
-	return ORDER[F['i']], ORDER[F['j']], F['m'] if F['morph'] else 0.0, F['spin'], 1.45
+	def lp(key, v, up, down):
+		o = F.setdefault(key, v); F[key] = o + (v - o) * (1 - math.exp(-dt * (up if v > o else down))); return F[key]
+	# DLOUHÝ TÓN / ZPĚV: dokud tón drží (stálé hlasité středy), květ se nafukuje a kolem něj houstne atmosféra;
+	# čím déle tón trvá, tím víc (plno za ~3 s); když skončí, pomalu se stáhne zpátky
+	# tón = hlasité středy (zpěv, synťák, pad), které se málo mění; měří se na vlastním vyhlazení pásem 4–8
+	L = A['LOB']; mid = sum(L[4:9]) / 5.0
+	mS = lp('midS', mid, 6.0, 6.0)
+	chg = abs(mid - F.get('midP', mid)) / max(dt, 1e-3); F['midP'] = mid
+	steady = max(0.0, 1.0 - lp('chg', chg, 4.0, 4.0) * 1.2)
+	tone = lp('tone', mS * steady, 3.0, 3.0) * on
+	# práh se přizpůsobí písničce: tón nad ~90 % dlouhodobého průměru nafukuje, pod ním květ splaskne
+	avg = lp('toneAvg', tone, .05, .05)
+	F['hold'] = min(6.0, max(0.0, F.get('hold', 0.0) + dt * max(-1.5, min(1.0, (tone - avg * .9) * 10.0))))
+	infl = lp('infl', min(1.0, F['hold'] / 3.0) * P('Finflate'), .7, .35)
+	# ROZJEZD: když se písnička rychle rozjede, květ se točí rychleji a zvětší se
+	ramp = lp('ramp', min(1.0, inten * .6 + x['surge'] * .9) * on, .8, .3)
+	rate = (.08 + ramp * .9) * (x['bpm'] / 120.0) * P('Fspin')
+	F['spinV'] = lp('spinV', rate, 1.0, .5)
+	F['spin'] += dt * F['spinV']
+	# NAKLÁNĚNÍ V RYTMU jako ve větru: kolébání tam a zpět po taktech (síla podle rytmu), k tomu poryvy
+	lean = math.sin(bp * math.pi / 4) * (.12 + x['kR'] * .22) + math.sin(F['spin'] * .37 + bp * .21) * .06
+	tilt = lp('tilt', lean * P('Flean'), 2.0, 2.0)
+	size = 1.1 * (1 + infl * .35 + ramp * .22)
+	return ORDER[F['i']], ORDER[F['j']], F['m'] if F['morph'] else 0.0, F['spin'], (size, infl, tilt)
 
 def update(A, dt, now):
 	op(SHOW + '/sc_bouquet').module.run(A, dt, now, PATH, S, species)
