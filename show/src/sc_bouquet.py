@@ -117,5 +117,10 @@ def update(A, dt, now):
 	r = q('render')
 	setv(q('mat'), 0, (P('Qsize'), r.width, r.height, 0))
 	setv(q('mat'), 1, (S['focus'], 12 * P('Qdof') + .01, 5, 14))
+	# znaky (ASCII / písmena) jako v Květu: velikost jen podle hlasitosti, znaky se nemíchají
+	sty = {'points': 0, 'ascii': 1, 'letters': 2}.get(P('Qstyle'), 1)
+	loud = lp('loud', A['energy'] * on, dt, 30.0, 4.0)
+	setv(q('ascii'), 0, ((6.0 + loud * 14.0 * P('Qcellbeat')) * P('Qcell') / 9.0, sty, 2.1, 0))
+	setv(q('ascii'), 1, (S['t'], 0, P('Qcolor'), 0))
 
 def look_name(): return 'kytice'
