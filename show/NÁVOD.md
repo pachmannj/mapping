@@ -11,7 +11,7 @@ Audio-reaktivní projekce na průhledné plátno. Projekt: `DJ_Show.toe` (TouchD
 ## Klávesy (v okně TouchDesigneru / ovládání)
 | Klávesa | Akce |
 | --- | --- |
-| 1–6 | Krasohled / Vortex / Echoes / Heat / Pták / Květ |
+| 1–7 | Krasohled / Vortex / Echoes / Heat / Pták / Květ / Kytice |
 | 0 | automatické střídání |
 | B | blackout (znovu = zpět) |
 | F | záblesk |
@@ -74,6 +74,14 @@ Skutečná lilie z časosběru (64 fází rozkvětu načtených po startu do pam
 rozkvět řídí energie hudby a každá její změna (ne jen hlasitost), kopák lilii „nadechne“, vystrčí k divákovi, zvětší a rozsvítí i zeď,
 virbl s ní pružně cukne, místo, kde právě raší, se rozsvítí na hi-hatech. S hudbou se přibližuje k divákovi a stín na zdi se vzdaluje.
 Záložka **Květ**: citlivost rozkvětu, velikost květu, jas.
+
+## Scéna Kytice
+Kytice květin složená z půl milionu svítících bodů (lilie, chryzantémy, pivoňky, stonky, listy, pyl ve vzduchu).
+Květiny jsou procedurální, takže opravdu rozkvétají. Kamera pomalu proplouvá před kyticí s malou hloubkou ostrosti:
+co je mimo ostrost, rozpije se do měkkých světelných skvrn. Reakce na hudbu: energie a každá změna v hudbě = rozkvět
+(lilie se ohne dozadu, pivoňky se otevřou), kopák = vlna po lístcích od středu ke špičkám, lilie blikne a kamera se nadechne dopředu,
+virbl = přeostření na jinou květinu, hi-haty a výšky = chvění lístků, hutnost hudby = části květů se rozpadají do mlhy a zase skládají.
+Záložka **Kytice**: citlivost rozkvětu, rozpad do mlhy, vlna kopáku, hloubka ostrosti, pohyb kamery, velikost bodů, jas, sytost barev.
 
 ## Pro úpravy
 - Zdrojáky jsou ve `src/` (Python + GLSL), TouchDesigner je čte ze souborů a změny se projeví hned.

@@ -203,3 +203,30 @@ def build_flower(SH):
 	win = window3d(Fc, lily, 300, 0)
 	glow = bloom(Fc, win, 800, 0, "0.45")
 	mk(Fc, nullTOP, 'out1', 1400, 0, (glow,))
+
+# ───────────────────────── KYTICE (květiny z bodů) ─────────────────────────
+def build_bouquet(SH):
+	Q = mk(SH, baseCOMP, 'bouquet', -1100, -900)
+	PW, PH = 1024, 512                                                  # 524 tisíc bodů
+	sim = glsl(Q, 'sim', 'bouquet_sim.glsl', -400, 0, ['uA0', 'uA1', 'uA2', 'uL0', 'uL1', 'uL2'], fmt='rgba32float')
+	custom_res(sim, PW, PH); setp(sim, 'numcolorbufs', 2)
+	for n_, v_ in (('vec0valuey', .6), ('vec1valuex', 9), ('vec1valuew', 1), ('vec2valuez', 1)): setp(sim, n_, v_)
+	col = mk(Q, renderselectTOP, 'col', -200, -100); col.par.top = sim; setp(col, 'bufferindex', 1); setp(col, 'format', 'rgba16float')
+	vd = textfile(Q, 'mat_vert', GL + '/bouquet_vert.glsl', -200, -300)
+	pd = textfile(Q, 'mat_pixel', GL + '/bouquet_pixel.glsl', -200, -420)
+	m = mk(Q, glslMAT, 'mat', 0, -300); m.par.vdat = vd; m.par.pdat = pd
+	uniforms(m, ['uI0', 'uD0'])
+	for n_, v_ in (('vec0valuex', 1.2), ('vec0valuey', 1280), ('vec0valuez', 720), ('vec1valuex', 3.5), ('vec1valuey', 12), ('vec1valuez', 10)): setp(m, n_, v_)
+	m.seq.sampler.numBlocks = 2
+	setp(m, 'sampler0name', 'sPos'); m.par.sampler0top = sim
+	setp(m, 'sampler1name', 'sCol'); m.par.sampler1top = col
+	additive(m)
+	instgeo(Q, 'geo', m, PW * PH, 200, -300)
+	tgt = mk(Q, nullCOMP, 'target', 0, -600); tgt.par.ty = .55
+	cam = mk(Q, cameraCOMP, 'cam', 200, -450); setp(cam, 'viewanglemethod', 'vertfov'); setp(cam, 'fov', 42); cam.par.tz = 3.6; setp(cam, 'near', .05); setp(cam, 'far', 50)
+	setp(cam, 'lookat', tgt.path)
+	rend = mk(Q, renderTOP, 'render', 400, -300)
+	rend.par.camera = cam.path; rend.par.geometry = 'geo'
+	res(rend, 'rgba16float'); black_bg(rend)
+	glow = bloom(Q, rend, 700, -300, "0.7")
+	mk(Q, nullTOP, 'out1', 1300, -300, (glow,))
