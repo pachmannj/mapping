@@ -163,7 +163,7 @@ pg = page('Květ')
 F(pg, 'Fbloom', 'Citlivost rozkvětu', 1, 0, 2); F(pg, 'Fsize', 'Velikost květu', 1, .4, 2); F(pg, 'Fbright', 'Jas', 1.1, 0, 3)
 
 pg = page('Kytice')
-M(pg, 'Qstyle', 'Styl', ['ascii', 'letters', 'points'], ['ASCII znaky', 'Písmena', 'Body'], 'ascii'); F(pg, 'Qcell', 'Velikost znaku (px)', 9, 4, 24)
+M(pg, 'Qstyle', 'Styl', ['ascii', 'letters', 'points'], ['ASCII znaky', 'Písmena', 'Body'], 'ascii'); F(pg, 'Qcell', 'Velikost znaku (px)', 9, 4, 24); F(pg, 'Qcellbeat', 'Pulz znaků na beat', 1, 0, 3)
 F(pg, 'Qbloom', 'Citlivost rozkvětu', 1, 0, 2); F(pg, 'Qmist', 'Rozpad do mlhy', 1, 0, 2); F(pg, 'Qwave', 'Vlna kopáku', 1, 0, 2)
 F(pg, 'Qdof', 'Hloubka ostrosti (rozmazání)', 1, 0, 2); F(pg, 'Qcam', 'Let kamery okolo (rychlost)', 1, 0, 3); F(pg, 'Qsize', 'Velikost bodů (px)', 1.7, .5, 3)
 F(pg, 'Qbright', 'Jas', 1, 0, 3); F(pg, 'Qcolor', 'Sytost barev', 1, 0, 1.5); F(pg, 'Qhue', 'Měnění barev lilií', 1, 0, 2)

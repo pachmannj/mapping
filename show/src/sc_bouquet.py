@@ -161,6 +161,11 @@ def update(A, dt, now):
 	# velikost znaků podle tempa: pomalá písnička = velké znaky, rychlá = malé (plynule, ať mřížka necuká)
 	tcell = 16.0 - (min(170.0, max(70.0, bpm)) - 70.0) / 100.0 * 10.0 if on else 13.0
 	cell = lp('cell', tcell, dt, .35)
+	# PULZ ZNAKŮ NA BEAT: kopák znaky prudce zvětší (nájezd ze středu), během doby se zase zmenší; drop ještě víc
+	if on and A['kickHit']: S['cpT'] = max(S.get('cpT', 0.0), min(1.0, .5 + A['kickHit'] * .6) * (1 + surge * .6))
+	S['cpT'] = S.get('cpT', 0.0) * math.exp(-dt * 4.5)
+	cp = lp('cp', S['cpT'], dt, 30.0, 30.0)
+	cell *= 1 + cp * 1.4 * P('Qcellbeat')
 	setv(q('ascii'), 0, (cell * P('Qcell') / 9.0, sty, 2.1, .12 if sty else 0))
 	setv(q('ascii'), 1, (S['t'], min(.8, scr), P('Qcolor'), 0))
 	r = q('render')

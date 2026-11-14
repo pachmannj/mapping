@@ -13,13 +13,13 @@ void main() {
 	vec4 orig = texture(sTD2DInputs[0], vUV.st);
 	if (uS0.y < .5) { fragColor = orig; return; }      // styl „body“: beze změny
 	float cw = max(uS0.x, 3.), ch = cw * 1.5;           // buňka 2 : 3 jako znak písma
-	vec2 px = vUV.st * res;
+	vec2 px = vUV.st * res - res * .5;                  // mřížka roste ze středu obrazu → změna velikosti působí jako nájezd
 	vec2 cell = floor(px / vec2(cw, ch));
 	vec2 lc = (px - cell * vec2(cw, ch)) / vec2(cw, ch); // místo uvnitř buňky 0–1 (y odspodu)
 	// průměr a maximum světla v buňce (3 × 3 vzorky)
 	vec3 sum = vec3(0.); float mx = 0.;
 	for (int j = 0; j < 3; j++) for (int i = 0; i < 3; i++) {
-		vec2 sp = (cell * vec2(cw, ch) + vec2(cw, ch) * (vec2(float(i), float(j)) + .5) / 3.) / res;
+		vec2 sp = (cell * vec2(cw, ch) + vec2(cw, ch) * (vec2(float(i), float(j)) + .5) / 3. + res * .5) / res;
 		vec3 c = texture(sTD2DInputs[0], sp).rgb;
 		sum += c; mx = max(mx, max(c.r, max(c.g, c.b)));
 	}
