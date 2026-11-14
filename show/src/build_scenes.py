@@ -182,9 +182,9 @@ def build_bird(SH):
 def window3d(parent, obj, x, y):
 	"""3D okno ve zdi (src/glsl/window3d.glsl): objekt jako karta v anamorfním výklenku; ovládá ho modul scény"""
 	ob = mk(parent, blurTOP, 'obj_blur', x, y - 200, (obj,)); setp(ob, 'size', 20)
-	w = glsl(parent, 'window', 'window3d.glsl', x + 200, y, ['uW0', 'uW1', 'uW2', 'uW3', 'uW4', 'uW5'], (obj, ob), custom_res=True)
+	w = glsl(parent, 'window', 'window3d.glsl', x + 200, y, ['uW0', 'uW1', 'uW2', 'uW3', 'uW4', 'uW5', 'uW6'], (obj, ob), custom_res=True)
 	for n_, v_ in (('vec0valuez', 3), ('vec0valuew', 1.78), ('vec1valuex', .84), ('vec1valuey', .62), ('vec1valuez', 1.2), ('vec1valuew', 1),
-	               ('vec2valuez', -.5), ('vec2valuew', .5), ('vec3valuex', 1), ('vec3valuez', 1.5), ('vec3valuew', 1.5), ('vec5valuez', 1)):
+	               ('vec2valuez', -.5), ('vec2valuew', .5), ('vec3valuex', 1), ('vec3valuez', 1.5), ('vec3valuew', 1.5), ('vec5valuez', 1), ('vec6valuez', 1)):
 		setp(w, n_, v_)                                                  # bezpečné výchozí hodnoty (žádné dělení nulou)
 	return w
 

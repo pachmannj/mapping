@@ -163,9 +163,10 @@ pg = page('Květ')
 F(pg, 'Fbloom', 'Citlivost rozkvětu', 1, 0, 2); F(pg, 'Fsize', 'Velikost květu', 1, .4, 2); F(pg, 'Fbright', 'Jas', 1.1, 0, 3)
 
 pg = page('3D okno')                                   # společné pro Ptáka a Květ: anamorfní výklenek ve zdi
+T(pg, 'Wbox', 'Výklenek (krychle s mřížkou)', False); F(pg, 'Wwall', 'Světlo na zdi (bez výklenku)', .35, 0, 1.5)
 F(pg, 'Weye', 'Výška očí diváka (0 = střed obrazu)', 0, -1.5, 1.5); F(pg, 'Wdist', 'Vzdálenost diváka (výšky obrazu)', 3, 1, 8)
 F(pg, 'Wdepth', 'Hloubka výklenku', 1.5, .2, 3); F(pg, 'Wsize', 'Velikost otvoru', .8, .2, 1)
-F(pg, 'Wpop', 'Vylézání z okna', 1, 0, 2); F(pg, 'Wedges', 'Svítící hrany', 1, 0, 3); F(pg, 'Wgrid', 'Mřížka', .4, 0, 2)
+F(pg, 'Wpop', 'Vylézání z okna', 1, 0, 2); F(pg, 'Wedges', 'Svítící hrany', 1, 0, 3); F(pg, 'Wgrid', 'Mřížka', 0, 0, 2)
 F(pg, 'Wshadow', 'Stín', .8, 0, 1); F(pg, 'Wrefl', 'Odlesk na podlaze', .35, 0, 1); F(pg, 'Wlight', 'Světlo objektu na zeď', 1, 0, 3)
 
 pg = page('Heat')

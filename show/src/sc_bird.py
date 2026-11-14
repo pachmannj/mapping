@@ -29,7 +29,7 @@ def reset():
 	S.update(dict(vt=0.0, cx=.5, cy=.5, ux=1.0, uy=0.0, span=.3, phase=1.0, flapRate=1.5, idle=1.5, t=0.0, beats=0,
 		z=-.6, zv=0.0, path=0.0, px=0.0, py=0.0, half=0.0, fr=0.0, hue=0.0))
 
-def window(w, A, on, obj, edgePulse, hue):
+def window(w, A, on, obj, edgePulse, hue, wall=1.0, wallY=0.0):
 	"""společné nastavení 3D okna (stejné jako v sc_flower.py); obj = (x, y, z, poloviční výška karty, poměr stran)"""
 	asp = w.width / max(1, w.height)
 	H = P('Wsize'); W = min(asp * .92, H * 1.5); oy = -.08
@@ -39,6 +39,7 @@ def window(w, A, on, obj, edgePulse, hue):
 	setv(w, 3, (obj[4], .4, oy + H + .7, 1.6))
 	setv(w, 4, (hue, P('Wgrid'), P('Wrefl'), P('Wshadow')))
 	setv(w, 5, (edgePulse, P('Wlight'), 1.0, oy))
+	setv(w, 6, (1 if P('Wbox') else 0, P('Wwall') * wall, 1.15, wallY))
 	return H, oy
 
 def track(asp):

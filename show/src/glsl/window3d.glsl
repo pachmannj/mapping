@@ -10,6 +10,7 @@ uniform vec4 uW2;   // objekt: střed x, y, z (z > 0 = před zdí), poloviční 
 uniform vec4 uW3;   // poměr stran objektu, světlo x, y, z
 uniform vec4 uW4;   // odstín stěn, síla mřížky, odlesk podlahy, síla stínu
 uniform vec4 uW5;   // pulz hran (kopák), světlo objektu na stěny a zeď, celkový jas, střed otvoru y
+uniform vec4 uW6;   // výklenek zapnutý (0/1), světlo na zdi (bez výklenku), poloměr světla, střed světla y
 out vec4 fragColor;
 
 vec3 hue(float h) { return clamp(abs(mod(h * 6. + vec3(0., 4., 2.), 6.) - 3.) - 1., 0., 1.); }
@@ -36,7 +37,8 @@ float cardShadow(vec3 x, vec3 L) {                       // kolik světla objekt
 	float hh = max(uW2.w, .01), hw = hh * max(uW3.x, .05);
 	vec2 uv = vec2((q.x - uW2.x) / (2. * hw) + .5, (q.y - uW2.y) / (2. * hh) + .5);
 	if (uv.x < 0. || uv.y < 0. || uv.x > 1. || uv.y > 1.) return 0.;
-	return texture(sTD2DInputs[1], uv).a;
+	float soft = clamp(length(q - x) * 1.3, 0., 1.);        // čím dál od zdi, tím měkčí stín
+	return mix(texture(sTD2DInputs[0], uv).a, texture(sTD2DInputs[1], uv).a, soft);
 }
 vec3 objLight() {                                        // průměrná barva objektu = barva světla, které vyzařuje
 	vec3 c = vec3(0.);
@@ -57,7 +59,8 @@ void main() {
 	vec3 Lp = uW3.yzw;
 	vec3 glowC = objLight() * uW5.y;
 	vec3 Oc = uW2.xyz;
-	bool inHole = abs(P.x) < W && abs(P.y - oy) < H;
+	bool box = uW6.x > .5;
+	bool inHole = box && abs(P.x) < W && abs(P.y - oy) < H;
 	vec3 behind = vec3(0.);
 	float tBehind = 1e9;
 
@@ -97,11 +100,16 @@ void main() {
 		}
 		tBehind = tWall + t;
 	} else {
-		// zeď kolem otvoru: tmavá (skutečná zeď), jen ji osvítí objekt, když je před ní, a svítí rám otvoru
+		// zeď kolem otvoru (nebo celá zeď bez výklenku): tmavá, osvítí ji objekt před ní, rám otvoru svítí
 		vec2 q = vec2(abs(P.x) - W, abs(P.y - oy) - H);
 		float dr = length(max(q, 0.)) + min(max(q.x, q.y), 0.);
 		float frame = exp(-dr / .004) + exp(-dr / .04) * .2;
-		behind = (hue(uW4.x + .1) * .5 + .5) * frame * uW1.w * (1. + uW5.x * 2.);
+		behind = box ? (hue(uW4.x + .1) * .5 + .5) * frame * uW1.w * (1. + uW5.x * 2.) : vec3(0.);
+		if (!box) {                                      // bez výklenku: objekt visí před zdí, osvětlená zeď za ním nese jeho stín
+			vec2 sp = (P.xy - vec2(Oc.x, uW6.w)) / max(uW6.z, .05);
+			float pool = exp(-dot(sp, sp)) * uW6.y;
+			behind += mix(vec3(1., .93, .85), glowC / max(max(glowC.r, max(glowC.g, glowC.b)), 1e-3), .25) * pool * (1. - cardShadow(P, Lp) * uW4.w);
+		}
 		float front = smoothstep(-.05, .2, Oc.z);
 		vec3 toO = Oc - P; float dO = length(toO);
 		float spill = max(toO.z, 0.) / max(dO, 1e-3) / (1. + dO * dO * 2.5);

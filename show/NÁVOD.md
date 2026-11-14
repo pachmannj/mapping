@@ -59,6 +59,8 @@ výklenek ve zdi. Objekt v něm má stín na podlaze a stěnách, odlesk na podl
 přeroste svítící rám otvoru a osvítí zeď kolem. Iluze je nejsilnější z místa, kde stojí publikum — nastav v záložce **3D okno**
 `Výška očí diváka` (0 = oči ve výšce středu obrazu, záporné = níž) a `Vzdálenost diváka` (v násobcích výšky obrazu na zdi).
 Dále hloubka a velikost výklenku, jak moc objekt vylézá, svítící hrany, mřížka, stín, odlesk a světlo objektu na zeď.
+Výklenek (krychle s mřížkou) je ve výchozím stavu vypnutý: objekt pak visí před zdí, zeď za ním je jemně osvětlená a nese jeho stín,
+který se s hloubkou vzdaluje a měkne. Zapíná se přepínačem `Výklenek`.
 Žádný automatický režisér — scény vypadají pořád stejně a reagují jen na hudbu.
 
 ## Scéna Pták
@@ -69,8 +71,8 @@ Záložka **Pták**: síla máchnutí, světelné stopy, barevný lem, rastr z t
 
 ## Scéna Květ
 Skutečná lilie z časosběru (64 fází rozkvětu načtených po startu do paměti grafiky, asi 4 s) stojí ve 3D okně:
-v tichu se zavře do pupenu hluboko ve výklenku, s energií hudby rozkvete a vyleze z okna před zeď. Kopák ji „nadechne“
-a postrčí dopředu, místo, kde právě raší, se rozsvítí na hi-hatech.
+rozkvět řídí energie hudby a každá její změna (ne jen hlasitost), kopák lilii „nadechne“, vystrčí k divákovi, zvětší a rozsvítí i zeď,
+virbl s ní pružně cukne, místo, kde právě raší, se rozsvítí na hi-hatech. S hudbou se přibližuje k divákovi a stín na zdi se vzdaluje.
 Záložka **Květ**: citlivost rozkvětu, velikost květu, jas.
 
 ## Pro úpravy
