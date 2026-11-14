@@ -10,6 +10,8 @@ uniform vec4 uA1;   // poloha vlny kopáku (0 = střed, 1.5 = za špičkami), s�
 uniform vec4 uA2;   // posun odstínu lilií (rad), záře lilií, sytost, rozptyl barev mezi liliemi
 uniform vec4 uA3;   // fáze proudění (hudební čas), síla větru, vlnění lístků, -
 uniform vec4 uL0; uniform vec4 uL1; uniform vec4 uL2;   // 12 frekvenčních pásem (vyhlazená v sc_bouquet.py)
+uniform vec4 uH0; uniform vec4 uH1; uniform vec4 uH2; uniform vec4 uH3;   // RÁNY: stáří (s), síla, odkud x, y
+uniform vec4 uH4;   // délka mávnutí (s), rychlost šíření vlny (jednotek/s), -, -
 uniform vec4 uA4;   // RYTMUS: poloha v taktu (0–4 doby, plynule podle tempa), síla kopáku, síla virblu, síla hi-hatů
 layout(location = 0) out vec4 oPos;
 layout(location = 1) out vec4 oCol;
@@ -32,8 +34,15 @@ vec3 hueRot(vec3 c, float a) {                         // otočení odstínu se 
 	float ca = cos(a), sa = sin(a); float i2 = i * ca - q * sa, q2 = i * sa + q * ca;
 	return max(vec3(y + .956 * i2 + .621 * q2, y - .272 * i2 - .647 * q2, y - 1.106 * i2 + 1.703 * q2), 0.);
 }
-// mávání: plynulá sinusovka svázaná s tempem (jako křídla ptáka / vlny Krasohledu), vrchol chvilku po úderu
-float flapEnv(float x, float period) { return .5 + .5 * cos(6.2832 * (x - .18 * period) / period); }
+// jedno mávnutí: plynulý náběh i doběh (sin²), trvá T sekund
+float flap1(float la, float T) { return (la > 0. && la < T) ? pow(sin(3.1416 * la / T), 2.) : 0.; }
+// rána h (stáří, síla, odkud x, y): vlna dorazí ke květině za vzdálenost / rychlost; vrací mávnutí a jeho fázi
+float hitFlap(vec4 h, vec2 at, float T, float spd, inout float ph) {
+	float la = h.x - length(at - h.zw) / max(spd, .1);
+	float f = flap1(la, T) * h.y;
+	if (f > 0.) ph = max(ph, clamp(la / T, 0., 1.));
+	return f;
+}
 vec3 noise3(vec3 p) {                                  // hladký vektorový šum (součet sinů, levný)
 	return vec3(sin(p.y * 1.7 + p.z * 1.3 + sin(p.x * 2.1)), sin(p.z * 1.9 + p.x * 1.1 + sin(p.y * 1.7)),
 	            sin(p.x * 1.5 + p.y * 2.3 + sin(p.z * 1.3)));
@@ -95,12 +104,14 @@ void main() {
 	// GROOVE: každý druh květiny hraje na jinou dobu taktu → kytice „hraje“ rytmus písničky
 	//   lilie = kopák na 1 a 3 (vlna se přelije přes lilie jedna po druhé), chryzantémy = virbl na 2 a 4, pivoňky = osminy (hi-hat)
 	float bx, env;
-	// lilie mávají jednou za 2 doby (otevřené na 1 a 3), chryzantémy v protifázi (2 a 4), pivoňky jednou za dobu
-	if (type > 1.5)      { bx = mod(uA4.x - fid * .12, 2.);       env = flapEnv(bx, 2.) * uA4.y; }
-	else if (type < .5)  { bx = mod(uA4.x - 1. - fid * .08, 2.);  env = flapEnv(bx, 2.) * max(uA4.z, uA4.y * .6); }
-	else                 { bx = mod(uA4.x - fid * .1, 1.);         env = flapEnv(bx, 1.) * (uA4.w * .5 + uA4.y * .5); }
+	// každá rána vyšle vlnu přes kytici: květina mávne, až k ní vlna dorazí (postupně, jako vlny Krasohledu)
+	vec2 at = (c * vec3(1.55, 1.15, 1.15)).xy;
+	float T = max(uH4.x, .2), spd = uH4.y;
+	bx = 0.;
+	env = hitFlap(uH0, at, T, spd, bx) + hitFlap(uH1, at, T, spd, bx) + hitFlap(uH2, at, T, spd, bx) + hitFlap(uH3, at, T, spd, bx);
+	env = env / (1. + env * .35);                         // víc ran naráz se sčítá, ale měkce (nepřestřelí)
 	// rozkvět: společná energie + vlastní pásmo + otevření na svou dobu
-	float open = clamp(uA0.y * .45 + bnd * .35 - .15 + env * .75, .04, 1.);
+	float open = clamp(uA0.y * .4 + bnd * .3 - .12 + env * 1.0, .04, 1.);
 	// vítr: celý květ se kývá na stonku (plynulé pole, každá květina v jiné fázi), s energií silněji
 	vec3 sway = noise3(vec3(fid * 2.3, ph * .35, fid * .7)) * uA3.y * (.04 + bnd * .04);
 	// houpání v taktu: celá kytice se kolébá tam a zpět jednou za takt (2 doby na každou stranu)
@@ -183,7 +194,7 @@ void main() {
 	vec3 up0 = normalize(up - sway * 1.6);
 	vec3 U = onStem ? up0 : up;
 	vec3 X = normalize(cross(U, abs(U.y) < .9 ? vec3(0., 1., 0.) : vec3(1., 0., 0.))), Y = cross(U, X);
-	float breathe = 1. + uA0.z * (.02 + bnd * .03) + env * .07;
+	float breathe = 1. + uA0.z * (.02 + bnd * .03) + env * .1;
 	mat3 B = mat3(X, Y, U);
 	vec3 head = sway * .9 * sc;
 	float k = sc * 1.45;
@@ -195,8 +206,8 @@ void main() {
 	float und = sin(waveUV * 5. - uA4.x * 3.1416 + pid * 1.3 + fid) * uA3.z * (.008 + bnd * .02) * waveUV * waveUV;
 	P += Nw * und * k;
 	// vlna na svou dobu: s každým úderem proběhne lístky od středu ke špičkám (za ~2/3 doby)
-	float wv = sin(waveUV * 4. - bx * 6.2832 / (type > .5 && type < 1.5 ? 1. : 2.)) * env * step(.001, waveUV) * uA1.y * .5;   // vlna lístky v rytmu mávání
-	P += Nw * wv * .07 * k;
+	float wv = exp(-pow((waveUV - bx * 1.4) / .3, 2.)) * env * step(.001, waveUV) * uA1.y;   // mávnutí proběhne lístky od středu ke špičkám
+	P += Nw * wv * .1 * k;
 	// chvění lístků (špičky víc), plynulé
 	if (uA0.w > .02) P += noise3(P * 2.3 + vec3(ph * .6, ph * .45, fid)) * uA0.w * .005 * (.3 + waveUV);
 	// rozpad do mlhy: jen část bodů (r4^3) odplyne s proudem pole, s hudbou se vrátí

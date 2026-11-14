@@ -110,6 +110,15 @@ def update(A, dt, now):
 	sR = lp('sR', min(1.0, S['sstr'] * (.7 + inten * .5)) * R, dt, 2.0, 1.0)
 	if not on: kR, sR, hstr = .25, .15, .1               # bez hudby jemné dýchání ve 100 BPM
 	bar = S['bp'] % 4.0
+	# ── RÁNY: každý kopák / virbl vyšle vlnu, která se šíří kytici; každá květina mávne, až k ní dorazí ──
+	#    kopák = velké mávnutí zespodu, virbl = menší shora (střídavě zleva / zprava); pamatují se poslední 4 rány
+	H = S.setdefault('hitq', [])
+	if on and A['kickHit']:
+		H.insert(0, [S['t'], min(1.3, .55 + A['kickHit'] * .9) * R * (1 + surge * .3), 0.0, -1.3])
+	if on and A['snareHit']:
+		side = 1.0 if S.get('sside', 1) > 0 else -1.0; S['sside'] = -side
+		H.insert(0, [S['t'], min(.9, .3 + A['snareHit'] * .6) * R, side * 1.2, 1.4])
+	del H[4:]
 	g = q('sim')
 	setv(g, 0, (S['t'], bloom, breathe, flutter))
 	setv(g, 1, (0, P('Qwave'), mist, P('Qbright')))
@@ -118,6 +127,11 @@ def update(A, dt, now):
 	setv(g, 3, (S['ph'], wind, und, 0))
 	for i in range(3): setv(g, 4 + i, tuple(out[4 * i:4 * i + 4]))
 	setv(g, 7, (bar, kR, sR, hstr * R))
+	for i in range(4):
+		h = H[i] if i < len(H) else [-99.0, 0.0, 0.0, 0.0]
+		setv(g, 8 + i, (S['t'] - h[0], h[1], h[2], h[3]))
+	# délka mávnutí podle tempa (~1 doba), rychlost šíření vlny kyticí roste s tempem
+	setv(g, 12, (min(.85, max(.35, 1.1 * 60.0 / max(60.0, bpm))), 2.4 * (bpm / 120.0), 0, 0))
 	# kamera: LÉTÁ OKOLO KYTICE, rychlost svázaná s tempem (1 oběh za 8 taktů = 32 dob), rozjezd a drop ji zrychlí;
 	# výška se vlní po 2 taktech, vzdálenost dýchá, na každou dobu se kamera nadechne dopředu
 	beat_s = 60.0 / max(60.0, bpm)

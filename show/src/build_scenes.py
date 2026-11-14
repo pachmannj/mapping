@@ -208,9 +208,10 @@ def build_flower(SH):
 def build_bouquet(SH):
 	Q = mk(SH, baseCOMP, 'bouquet', -1100, -900)
 	PW, PH = 1024, 320                                                  # 327 tisíc bodů (víc přetěžovalo grafiku MacBooku Air → trhání)
-	sim = glsl(Q, 'sim', 'bouquet_sim.glsl', -400, 0, ['uA0', 'uA1', 'uA2', 'uA3', 'uL0', 'uL1', 'uL2', 'uA4'], fmt='rgba16float')   # 16 bitů stačí, polovina přenosu
+	sim = glsl(Q, 'sim', 'bouquet_sim.glsl', -400, 0, ['uA0', 'uA1', 'uA2', 'uA3', 'uL0', 'uL1', 'uL2', 'uA4', 'uH0', 'uH1', 'uH2', 'uH3', 'uH4'], fmt='rgba16float')   # 16 bitů stačí, polovina přenosu
 	custom_res(sim, PW, PH); setp(sim, 'numcolorbufs', 2)
-	for n_, v_ in (('vec0valuey', .6), ('vec1valuex', 9), ('vec1valuew', 1), ('vec2valuez', 1)): setp(sim, n_, v_)
+	for n_, v_ in (('vec0valuey', .6), ('vec1valuex', 9), ('vec1valuew', 1), ('vec2valuez', 1), ('vec12valuex', .5), ('vec12valuey', 2)): setp(sim, n_, v_)
+	for i_ in range(8, 12): setp(sim, 'vec%dvaluex' % i_, 99)        # bez ran: stáří 99 s
 	col = mk(Q, renderselectTOP, 'col', -200, -100); col.par.top = sim; setp(col, 'bufferindex', 1); setp(col, 'format', 'rgba16float')
 	vd = textfile(Q, 'mat_vert', GL + '/bouquet_vert.glsl', -200, -300)
 	pd = textfile(Q, 'mat_pixel', GL + '/bouquet_pixel.glsl', -200, -420)
