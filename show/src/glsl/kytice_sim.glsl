@@ -86,6 +86,7 @@ void main() {
 	}
 	vec3 c, up; float type, sc, bi;
 	flower(id, c, up, type, sc, bi);
+	vec3 upRest = up;
 	float fid = id;
 	// každá květina poslouchá své pásmo (sousední pásma trochu taky)
 	float bnd = band(bi) * .6 + (band(bi - 1.) + band(bi + 1.)) * .2;
@@ -170,7 +171,9 @@ void main() {
 	bool onStem = part >= .84;
 	vec3 up0 = normalize(up - sway * 1.6);
 	vec3 U = onStem ? up0 : up;
-	vec3 X = normalize(cross(U, abs(U.y) < .9 ? vec3(0., 1., 0.) : vec3(1., 0., 0.))), Y = cross(U, X);
+	// osy lístků odvozené od KLIDOVÉ osy květu (upRest): pomocná osa se nikdy nepřepne → hlava květu ve větru nepřeskočí
+	vec3 X0 = normalize(cross(upRest, abs(upRest.y) < .9 ? vec3(0., 1., 0.) : vec3(1., 0., 0.))), Y0 = cross(upRest, X0);
+	vec3 X = normalize(cross(Y0, U)), Y = cross(U, X);
 	float breathe = 1. + uA0.z * (.03 + bnd * .05);
 	mat3 B = mat3(X, Y, U);
 	vec3 head = sway * .9 * sc;
