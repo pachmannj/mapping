@@ -42,6 +42,32 @@ def lp(key, x, dt, up=3.0, down=None):
 	S[key] = v + (x - v) * (1 - math.exp(-dt * r))
 	return S[key]
 
+def motion(St, A, dt, x, pfx):
+	"""plavání jako Vortex (Květ i Kytice): nafouknutí dlouhým tónem / zpěvem, rozjezd, náklon v rytmu jako ve větru, otáčení.
+	pfx = předpona parametrů ('F' Květ, 'Q' Kytice): …inflate, …lean, …spin. Vrací (nafouknutí, rozjezd, náklon, otočení)."""
+	M = St.setdefault('M', dict(spin=0.0))
+	on, bp, dt_ = x['on'], x['bp'], max(dt, 1e-3)
+	def lp_(key, v, up, down):
+		o = M.setdefault(key, v); M[key] = o + (v - o) * (1 - math.exp(-dt * (up if v > o else down))); return M[key]
+	# DLOUHÝ TÓN / ZPĚV: hlasité středy (zpěv, synťák, pad), které se málo mění; dokud tón drží, nafukuje se (plno za ~3 s),
+	# když skončí, pomalu se stáhne. Práh se přizpůsobí písničce (tón musí vyčnívat nad ~90 % dlouhodobého průměru).
+	L = A['LOB']; mid = sum(L[4:9]) / 5.0
+	mS = lp_('midS', mid, 6.0, 6.0)
+	chg = abs(mid - M.get('midP', mid)) / dt_; M['midP'] = mid
+	steady = max(0.0, 1.0 - lp_('chg', chg, 4.0, 4.0) * 1.2)
+	tone = lp_('tone', mS * steady, 3.0, 3.0) * on
+	avg = lp_('toneAvg', tone, .05, .05)
+	M['hold'] = min(6.0, max(0.0, M.get('hold', 0.0) + dt * max(-1.5, min(1.0, (tone - avg * .9) * 10.0))))
+	infl = lp_('infl', min(1.0, M['hold'] / 3.0) * P(pfx + 'inflate'), .7, .35)
+	# ROZJEZD: písnička se rychle rozjede → točí se rychleji a zvětší se
+	ramp = lp_('ramp', min(1.0, x['inten'] * .6 + x['surge'] * .9) * on, .8, .3)
+	M['spinV'] = lp_('spinV', (.08 + ramp * .9) * (x['bpm'] / 120.0) * P(pfx + 'spin'), 1.0, .5)
+	M['spin'] += dt * M['spinV']
+	# NÁKLON V RYTMU jako ve větru: kolébání po taktech (síla podle rytmu) + poryvy
+	lean = math.sin(bp * math.pi / 4) * (.12 + x['kR'] * .22) + math.sin(M['spin'] * .37 + bp * .21) * .06
+	tilt = lp_('tilt', lean * P(pfx + 'lean'), 2.0, 2.0)
+	return infl, ramp, tilt, M['spin']
+
 FOCUS = [(x * 1.55, y * 1.15, z * 1.15) for x, y, z in ((.15, .55, .2), (-.78, .42, -.2), (.88, .22, .2), (-.05, -.42, .62), (-.5, -.1, .3), (.72, -.42, -.15))]
 
 def update(A, dt, now): run(A, dt, now, '/project1/show/bouquet', S)
@@ -127,11 +153,11 @@ def _update(A, dt, now, solo):
 	beat_s = 60.0 / max(60.0, bpm)
 	if on and A['kickHit'] and (S['t'] - S.get('lastK', -9) > 1.8 * beat_s or (A['kickHit'] > .95 and S['t'] - S.get('lastK', -9) > .9 * beat_s)):
 		S['lastK'] = S['t']
-		H.insert(0, [S['t'], min(1.3, .6 + A['kickHit'] * .8) * R * (1 + surge * .3) * (.55 if solo else 1.0), 0.0, -1.3])
+		H.insert(0, [S['t'], min(1.3, .6 + A['kickHit'] * .8) * R * (1 + surge * .3) * .55, 0.0, -1.3])
 	if on and A['snareHit'] > .55 and S['t'] - S.get('lastS', -9) > 3.6 * beat_s:
 		S['lastS'] = S['t']
 		side = 1.0 if S.get('sside', 1) > 0 else -1.0; S['sside'] = -side
-		H.insert(0, [S['t'], min(.8, .3 + A['snareHit'] * .5) * R * (.5 if solo else 1.0), side * 1.2, 1.4])
+		H.insert(0, [S['t'], min(.8, .3 + A['snareHit'] * .5) * R * .5, side * 1.2, 1.4])
 	del H[4:]
 	g = q('sim')
 	setv(g, 0, (S['t'], bloom, breathe, flutter))
@@ -145,14 +171,15 @@ def _update(A, dt, now, solo):
 		h = H[i] if i < len(H) else [-99.0, 0.0, 0.0, 0.0]
 		setv(g, 8 + i, (S['t'] - h[0], h[1], h[2], h[3]))
 	# délka mávnutí podle tempa (~1 doba), rychlost šíření vlny kyticí roste s tempem
-	flapT = min(1.8, max(.8, 2.0 * 60.0 / max(60.0, bpm))) * (1.6 if solo else 1.0)   # Květ: mávnutí delší a měkčí (plave)
+	flapT = min(1.8, max(.8, 2.0 * 60.0 / max(60.0, bpm))) * 1.6   # mávnutí delší a měkčí (plave jako Vortex)
 	setv(g, 12, (flapT, 1.3 * (bpm / 120.0), 0, 0))   # mávnutí ~2 doby, vlna pomalu
 	# KVĚT (jedna květina): druh A → B, morf, otočení, velikost — vybírá sc_flower.py podle beatu a písničky
 	if solo:
 		ta, tb, m, spin, (size, infl, tilt) = solo(S, A, dt, now, dict(on=on, bp=S['bp'], bpm=bpm, inten=inten, surge=surge, kR=kR))
 		setv(g, 13, (1, ta, tb, m)); setv(g, 14, (spin, size, infl, tilt))
 	else:
-		setv(g, 13, (0, 0, 0, 0)); setv(g, 14, (0, 1, 0, 0))
+		infl, ramp, tilt, spin = motion(S, A, dt, dict(on=on, bp=S['bp'], bpm=bpm, inten=inten, surge=surge, kR=kR), 'Q')
+		setv(g, 13, (0, 0, 0, 0)); setv(g, 14, (spin * .15, 1 + infl * .07 + ramp * .06, infl * .5, tilt * .6))   # kytice se otáčí pomaleji
 	# kamera: LÉTÁ OKOLO KYTICE, rychlost svázaná s tempem (1 oběh za 8 taktů = 32 dob), rozjezd a drop ji zrychlí;
 	# výška se vlní po 2 taktech, vzdálenost dýchá, na každou dobu se kamera nadechne dopředu
 	beat_s = 60.0 / max(60.0, bpm)
@@ -160,7 +187,6 @@ def _update(A, dt, now, solo):
 	S['ang'] += dt * orbit * P('Qcam')
 	push = lp('push', (eS * .15 + surge * .4) * on * P('Qcam'), dt, 1.5, .6)
 	bx = S['bp'] % 1.0
-	if not solo: push += (math.exp(-bx * 2.0) * min(1.0, bx / .15)) * kR * .05 * P('Qcam')   # kamera se na každou dobu nadechne
 	a = math.sin(S['ang']) * .35 if solo else S['ang']   # Květ: kamera zůstává zepředu, jen se mírně kolébá (zboku květ není hezký)
 	rad = (4.0 if solo else 4.7) - push + .5 * math.sin(S['bp'] * math.pi / 16)  # přiblížení a oddálení po 8 dobách
 	cx, cy, cz = math.sin(a) * rad, (.25 if solo else .7) + (.25 if solo else .6) * math.sin(S['bp'] * math.pi / 8), math.cos(a) * rad
@@ -176,10 +202,10 @@ def _update(A, dt, now, solo):
 	sty = {'points': 0, 'ascii': 1, 'letters': 2}.get(P('Qstyle'), 1)
 	scr = (math.exp(-bx * 4.0) * min(1.0, bx / .05)) * (kR * .2 + sR * .1) + surge * .15
 	# VELIKOST ZNAKŮ = JEN HLASITOST: čím hlasitější zvuk, tím větší znaky (okamžitý náběh, rychlý doběh → žádné zpoždění)
-	loud = lp('loud', A['energy'] * on, dt, 30.0, 8.0 if not solo else 4.0)
+	loud = lp('loud', A['energy'] * on, dt, 30.0, 4.0)
 	cell = 6.0 + loud * 14.0 * P('Qcellbeat')
 	setv(q('ascii'), 0, (cell * P('Qcell') / 9.0, sty, 2.1, 0))   # pod znaky už nejsou vidět původní body
-	setv(q('ascii'), 1, (S['t'], 0 if solo else min(.8, scr), P('Qcolor'), 0))
+	setv(q('ascii'), 1, (S['t'], 0, P('Qcolor'), 0))   # znaky se nemíchají (plynulost)
 	r = q('render')
 	setv(q('mat'), 0, (P('Qsize'), r.width, r.height, 0))
 	setv(q('mat'), 1, (S['focus'], 12 * P('Qdof') + .01, 5, 14))

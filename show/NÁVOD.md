@@ -82,6 +82,11 @@ Záložka **Květ**: nafouknutí dlouhým tónem, náklon v rytmu, otáčení kv
 `src/sc_flower.py` do ORDER přidají další druhy).
 
 ## Scéna Kytice
+**Plave jako Vortex (stejně jako Květ):** měkká dlouhá mávnutí na rány, znaky se nemíchají, kamera se na doby necuká.
+Dlouhý tón / zpěv kytici rozvine, mírně nafoukne a zhustí kolem ní atmosféru (pak se stáhne); celá kytice se kolébá v rytmu
+od paty jako ve větru; když se písnička rozjede, pomalu se otáčí rychleji a o kus zvětší.
+Posuvníky v záložce Kytice: Nafouknutí dlouhým tónem, Náklon v rytmu, Otáčení kytice.
+
 Kytice se zobrazuje **ve znacích**: obraz se rozdělí na buňky jako terminál a každá buňka dostane znak podle toho, kolik je v ní
 světla, v barvě květiny pod ní. Styly: **ASCII znaky**, **Písmena**, nebo původní **Body** (záložka Kytice → Styl, Velikost znaku).
 Velikost znaků se řídí **jen hlasitostí**: čím hlasitější zvuk, tím větší znaky (okamžitě, bez zpoždění; posuvník Velikost znaků podle hlasitosti). Na dobu se část znaků krátce zamíchá. Kamera **létá okolo kytice** rychlostí podle tempa (1 oběh za 16 taktů, při rozjezdu a dropu rychleji),

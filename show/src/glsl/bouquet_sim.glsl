@@ -203,8 +203,9 @@ void main() {
 			return;
 		}
 		q += noise3(q * .6 + ph * .08) * .35 + vec3(0., fract(r4 + t * .01) * .4, 0.);
-		float keep = step(.7, r1);                         // jen pětina pylu je vidět, zbytek by dělal zrno
-		oPos = vec4(q, (.8 + r4) * keep); oCol = vec4(vec3(.8, .75, 1.) * (.05 + r4 * .12) * uA1.w * keep, 1.);
+		float keep = step(.7 - uM1.z * .1, r1);            // část pylu; s dlouhým tónem houstne atmosféra
+		q *= 1. + uM1.z * .2;
+		oPos = vec4(q, (.8 + r4) * keep); oCol = vec4(vec3(.8, .75, 1.) * (.05 + r4 * .12) * (1. + uM1.z * .8) * uA1.w * keep, 1.);
 		return;
 	}
 	vec3 c, up; float type, sc, bi;
@@ -222,7 +223,7 @@ void main() {
 	env = hitFlap(uH0, at, T, spd, bx) + hitFlap(uH1, at, T, spd, bx) + hitFlap(uH2, at, T, spd, bx) + hitFlap(uH3, at, T, spd, bx);
 	env = env / (1. + env * .35);                         // víc ran naráz se sčítá, ale měkce (nepřestřelí)
 	// rozkvět: společná energie + vlastní pásmo + mávnutí z rány
-	float open = clamp(uA0.y * .4 + bnd * .3 - .12 + env * 1.0 + (solo ? uM1.z * .35 : 0.), .04, 1.);
+	float open = clamp(uA0.y * .4 + bnd * .3 - .12 + env * 1.0 + uM1.z * (solo ? .35 : .3), .04, 1.);   // dlouhý tón květy rozevře
 	// vítr: celý květ se kývá na stonku (plynulé pole, každá květina v jiné fázi), s energií silněji
 	vec3 sway = noise3(vec3(fid * 2.3, ph * .35, fid * .7)) * uA3.y * (.04 + bnd * .04);
 	// houpání v taktu: celá kytice se kolébá tam a zpět jednou za takt (2 doby na každou stranu)
@@ -280,14 +281,18 @@ void main() {
 	// chvění lístků (špičky víc), plynulé
 	if (uA0.w > .02) P += noise3(P * 2.3 + vec3(ph * .6, ph * .45, fid)) * uA0.w * .005 * (.3 + waveUV);
 	// rozpad do mlhy: jen část bodů (r4^3) odplyne s proudem pole, s hudbou se vrátí
-	float dis = (uA1.z + (solo ? uM1.z * .35 : 0.)) * pow(r4, 3.) * (.4 + waveUV);
+	float dis = (uA1.z + uM1.z * (solo ? .35 : .25)) * pow(r4, 3.) * (.4 + waveUV);
 	if (dis > .002) P += noise3(P * .8 + ph * .3) * dis * .6;   // většina bodů mlhu nepočítá (šetří grafiku)
 	alpha *= (1. - dis * .5);
 	// barvy: lilie blikne na kopák, květy dýchají s pásmem
 	float glow = (.5 + bnd * .8) * (.8 + env * .9) * (solo || (type > 1.5 && type < 2.5) ? 1. + uA2.y * .5 : 1.);
 	col = mix(vec3(dot(col, vec3(.33))), col, uA2.z);
-	if (solo) {                                          // náklon v rytmu: celá rostlina se nakloní od paty stonku jako ve větru
-		vec3 pv = vec3(0., -2.4, -.6);
+	if (!solo) {                                         // Kytice: rozjezd a dlouhý tón ji zvětší, pomalu se otáčí kolem svislé osy
+		P *= uM1.y;
+		float cs = cos(uM1.x), ss = sin(uM1.x); P.xz = mat2(cs, -ss, ss, cs) * P.xz;
+	}
+	{                                                    // náklon v rytmu: celá rostlina / kytice se nakloní od paty jako ve větru
+		vec3 pv = solo ? vec3(0., -2.4, -.6) : vec3(0., -2.8, 0.);
 		float ct = cos(uM1.w), st = sin(uM1.w);
 		vec3 d = P - pv; P = pv + vec3(d.x * ct - d.y * st, d.x * st + d.y * ct, d.z);
 	}
