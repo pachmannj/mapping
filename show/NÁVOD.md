@@ -84,7 +84,7 @@ Velikost znaků se řídí tempem písničky: pomalá = velké znaky, rychlá = 
 Na každý kopák znaky prudce vyrostou ze středu obrazu (nájezd) a během doby se zase zmenší, na dropu ještě víc — posuvník Pulz znaků na beat. Na dobu se část znaků krátce zamíchá. Kamera **létá okolo kytice** rychlostí podle tempa (1 oběh za 16 taktů, při rozjezdu a dropu rychleji),
 výška se vlní po 2 taktech a na každou dobu se nadechne dopředu. Atlas znaků (`media/glyphs.png`) vyrábí `tools/make_glyphs.py`.
 
-Kytice z 327 tisíc svítících bodů: pět růžových lilií, dvě růže, tulipán, dvě pivoňky, stonky, listy a pyl ve vzduchu.
+Kytice z 327 tisíc svítících bodů: pět růžových lilií, tři chryzantémy, dvě pivoňky, stonky, listy a pyl ve vzduchu.
 Květiny jsou procedurální, takže opravdu rozkvétají. Kamera se pomalu kývá před kyticí s malou hloubkou ostrosti:
 co je mimo ostrost, rozpije se do měkkých světelných skvrn.
 Pohyb je organický a plynulý jako u Vortexu: vítr kývá květy na stoncích (stonky jsou dole ukotvené a ohýbají se),

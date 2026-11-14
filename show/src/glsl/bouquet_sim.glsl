@@ -59,11 +59,11 @@ void flower(float id, out vec3 c, out vec3 up, out float type, out float sc, out
 	else if (id < 2.5){ c = vec3(.88, .22, .2);    up = vec3(.55, .55, .65);  type = 2.; sc = .9;   bi = 3.; }
 	else if (id < 3.5){ c = vec3(-.05, -.42, .62); up = vec3(.05, .3, .95);   type = 2.; sc = .8;   bi = 10.; }
 	else if (id < 4.5){ c = vec3(.5, 1.0, -.55);   up = vec3(.3, .85, .3);    type = 2.; sc = .8;   bi = 6.; }
-	else if (id < 5.5){ c = vec3(-.5, -.1, .3);    up = vec3(-.35, .6, .7);   type = 5.; sc = .95;  bi = 1.; }
+	else if (id < 5.5){ c = vec3(-.5, -.1, .3);    up = vec3(-.35, .6, .7);   type = 0.; sc = .95;  bi = 1.; }
 	else if (id < 6.5){ c = vec3(.72, -.42, -.15); up = vec3(.45, .55, .7);   type = 1.; sc = 1.;   bi = 0.; }
-	else if (id < 7.5){ c = vec3(-.4, -.8, .45);   up = vec3(-.1, .4, .9);    type = 3.; sc = .8;   bi = 9.; }
+	else if (id < 7.5){ c = vec3(-.4, -.8, .45);   up = vec3(-.1, .4, .9);    type = 0.; sc = .8;   bi = 9.; }
 	else if (id < 8.5){ c = vec3(-1.05, -.35, -.4);up = vec3(-.55, .5, .65);  type = 1.; sc = .85;  bi = 2.; }
-	else              { c = vec3(.55, -.95, .45);  up = vec3(.35, .35, .85);  type = 5.; sc = .65;  bi = 11.; }
+	else              { c = vec3(.55, -.95, .45);  up = vec3(.35, .35, .85);  type = 0.; sc = .65;  bi = 11.; }
 	up = normalize(up);
 }
 
@@ -99,13 +99,15 @@ void headPoint(float type, float open, float part, float u, float v, float r1, f
 		} else if (type < 1.5) {                         // PIVOŇKA: ~55 širokých prohnutých lístků do koule
 			float N = 55., pi = floor(pr * N), layer = pi / N;
 			float th = pi * 2.39996 + h1(pi + fid * 5.) * .3;
-			float L = mix(.18, .62, layer) * (.85 + h1(pi * 2.1) * .3);
+			bool big = uM0.x > .5;                       // v Květu větší a růžová, v Kytici původní bílo-růžová
+			float L = mix(.14, .48, layer) * (.85 + h1(pi * 2.1) * .3) * (big ? 1.3 : 1.);
 			float b0 = mix(1.5, mix(1.45, .25, layer), open);
 			float kap = mix(3.2, 1.4, layer);
 			float wp = mix(.1, .26, layer) * pow(sin(3.1416 * clamp(u * .85 + .15, 0., 1.)), .45);
 			lp = petal(th, .05, L, b0, kap, wp, .55, u, v, nrm); pid = pi;
 			lp += nrm * sin(u * 18. + v * 6. + pi) * .006;   // zvlnění
-			col = hueRot(mix(vec3(1., .3, .6), vec3(1., .72, .85), u * .4 + layer * .35), ha * .8);
+			col = big ? hueRot(mix(vec3(1., .3, .6), vec3(1., .72, .85), u * .4 + layer * .35), ha * .8)
+			          : mix(vec3(1., .62, .78), vec3(1., .9, .95), u * .5 + layer * .4);
 			alpha = .045 + .3 * pow(abs(v), 10.) + .15 * smoothstep(.88, 1., u);
 		} else if (type < 2.5) {                         // LILIE: 6 dlouhých lístků, s rozkvětem se ohnou dozadu
 			float pi = floor(pr * 6.), layer = mod(pi, 2.);
