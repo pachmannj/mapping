@@ -121,8 +121,8 @@ def _update(A, dt, now, solo):
 	bloom = lp('bloom', max(.1, min(1.0, tgt)), dt, 1.5, .7)
 	mist = lp('mist', (bS * .25 + max(0.0, S['lobS'][11] - S['lobL'][11]) * 1.5 + surge * .6) * on * P('Qmist'), dt, 1.2, .5)
 	flutter = lp('flut', (.25 + A['hatEnv'] * .8 + b['air'] * .6) * on * R + (.2 if not on else 0), dt, 2.0, 1.0)
-	breathe = lp('brth', A['kickEnv'] * on * R, dt, 5.0, 2.0)
-	wind = lp('wind', .3 + (eS * .6 + bS * .4 + inten * .6 + surge * 1.2) * R * on, dt, 1.0, .5)
+	breathe = lp('brth', A['kickEnv'] * on * R, dt, 25.0, 6.0)   # pumpování na kopák (rychlý náběh, doběh do další doby)
+	wind = lp('wind', .08 + (eS * .1 + surge * .2) * R * on, dt, 1.0, .5)   # vítr jen jemně (houpání dělalo nevolno)
 	und = lp('und', .45 + (eS * .6 + bS * .4 + inten * .6 + surge * 1.0) * on, dt, 1.0, .5)
 	glow = lp('glow', (A['kickEnv'] * .8 + surge * .6) * on * R, dt, 6.0, 2.0)
 	# barvy lilií: odstín se posouvá rychlostí podle intenzity (v klidu skoro stojí), rozptyl mezi liliemi roste s rozjezdem
@@ -151,7 +151,7 @@ def _update(A, dt, now, solo):
 	H = S.setdefault('hitq', [])
 	#    klidněji: kopák vyšle vlnu nejvýš jednou za 2 doby (silný kopák dřív), virbl jen silný a nejvýš jednou za 4 doby
 	beat_s = 60.0 / max(60.0, bpm)
-	if on and A['kickHit'] and (S['t'] - S.get('lastK', -9) > 1.8 * beat_s or (A['kickHit'] > .95 and S['t'] - S.get('lastK', -9) > .9 * beat_s)):
+	if on and A['kickHit'] and S['t'] - S.get('lastK', -9) > .8 * beat_s:
 		S['lastK'] = S['t']
 		H.insert(0, [S['t'], min(1.3, .6 + A['kickHit'] * .8) * R * (1 + surge * .3) * .55, 0.0, -1.3])
 	if on and A['snareHit'] > .55 and S['t'] - S.get('lastS', -9) > 3.6 * beat_s:
@@ -171,7 +171,7 @@ def _update(A, dt, now, solo):
 		h = H[i] if i < len(H) else [-99.0, 0.0, 0.0, 0.0]
 		setv(g, 8 + i, (S['t'] - h[0], h[1], h[2], h[3]))
 	# délka mávnutí podle tempa (~1 doba), rychlost šíření vlny kyticí roste s tempem
-	flapT = min(1.8, max(.8, 2.0 * 60.0 / max(60.0, bpm))) * 1.6   # mávnutí delší a měkčí (plave jako Vortex)
+	flapT = min(.9, max(.25, .95 * 60.0 / max(60.0, bpm)))   # mávnutí na každou dobu a trvá jednu dobu → rychlá písnička = rychlé mávání
 	if on and A['kickHit']: S['kn'] = S.get('kn', 0) + 1; S['kt'] = S['t']      # bliknutí lilií vzadu (Květ) přímo na kopák
 	setv(g, 12, (flapT, 1.3 * (bpm / 120.0), S.get('kn', 0) % 6, S['t'] - S.get('kt', -9.0)))   # mávnutí ~2 doby, vlna pomalu
 	# KVĚT (jedna květina): druh A → B, morf, otočení, velikost — vybírá sc_flower.py podle beatu a písničky
@@ -188,9 +188,9 @@ def _update(A, dt, now, solo):
 	S['ang'] += dt * orbit * P('Qcam')
 	push = lp('push', (eS * .15 + surge * .4) * on * P('Qcam'), dt, 1.5, .6)
 	bx = S['bp'] % 1.0
-	a = math.sin(S['ang']) * .35 if solo else S['ang']   # Květ: kamera zůstává zepředu, jen se mírně kolébá (zboku květ není hezký)
-	rad = (4.8 if solo else 4.7) - push + .5 * math.sin(S['bp'] * math.pi / 16)  # přiblížení a oddálení po 8 dobách
-	cx, cy, cz = math.sin(a) * rad, (.25 if solo else .7) + (.25 if solo else .6) * math.sin(S['bp'] * math.pi / 8), math.cos(a) * rad
+	a = 0.0 if solo else S['ang']                      # Květ: kamera stojí zepředu (žádné kolébání)
+	rad = (4.8 if solo else 4.7) - push                 # bez houpání vzdálenosti
+	cx, cy, cz = math.sin(a) * rad, (.25 if solo else .7), math.cos(a) * rad   # výška stálá (houpání nahoru a dolů pryč)
 	c = q('cam')
 	c.par.tx, c.par.ty, c.par.tz = cx, cy, cz          # natočení řeší Look At na null „target“
 	# ostření: na virbl přeostří na jinou květinu, nejvýš jednou za 4 s, plynule

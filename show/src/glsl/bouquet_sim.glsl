@@ -236,7 +236,6 @@ void main() {
 	// vítr: celý květ se kývá na stonku (plynulé pole, každá květina v jiné fázi), s energií silněji
 	vec3 sway = noise3(vec3(fid * 2.3, ph * .35, fid * .7)) * uA3.y * (.04 + bnd * .04);
 	// houpání v taktu: celá kytice se kolébá tam a zpět jednou za takt (2 doby na každou stranu)
-	sway += vec3(sin(uA4.x * 1.5708 + fid * .35), .0, cos(uA4.x * 1.5708 + fid * .35) * .5) * .07 * (uA4.y * .7 + .15);
 	up = normalize(up + sway * 1.6);
 	vec3 lp, nrm = vec3(0., 0., 1.);
 	float u = sqrt(r2), v = r3 * 2. - 1., part = r1;      // sqrt: víc bodů ke špičkám; part: 0–0.78 lístky, pak střed, stonek, listy
@@ -273,7 +272,7 @@ void main() {
 	vec3 up0 = normalize(up - sway * 1.6);
 	vec3 U = onStem ? up0 : up;
 	vec3 X = normalize(cross(U, abs(U.y) < .9 ? vec3(0., 1., 0.) : vec3(1., 0., 0.))), Y = cross(U, X);
-	float breathe = 1. + uA0.z * (.02 + bnd * .03) + env * .1;
+	float breathe = 1. + uA0.z * (.05 + bnd * .04) + env * .08;   // pumpování na kopák v tempu
 	mat3 B = mat3(X, Y, U);
 	vec3 head = sway * .9 * sc;
 	float k = sc * 1.45;

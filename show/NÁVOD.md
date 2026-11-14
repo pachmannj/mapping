@@ -75,7 +75,8 @@ Velká **lilie** ze svítících bodů (a za ní šest menších lilií ve stejn
 platí i tady), ale **plave plynule jako Vortex**: měkké mávnutí na rány, znaky dýchají bez cukání a nemíchají se.
 - **Dlouhý tón / zpěv**: dokud tón drží (hlasité stálé středy, které vyčnívají nad průměr písničky), lilie se nafukuje, rozevírá
   a kolem ní houstne svítící atmosféra; čím déle tón trvá, tím víc (plno za ~3 s). Když tón skončí, pomalu se stáhne.
-- **Náklon v rytmu**: celá rostlina se kolébá od paty stonku jako ve větru (po taktech, silněji s výrazným rytmem).
+- **Bez houpání**: kamera stojí zepředu, náklon v rytmu je ve výchozím stavu vypnutý (posuvník Náklon v rytmu ho může vrátit).
+- **Tempo**: lilie mávne na každou dobu a mávnutí trvá jednu dobu — rychlá písnička = rychlé mávání; na kopák se nafoukne (pumpuje).
 - **Rozjezd písničky**: lilie se začne točit rychleji a zvětší se.
 - Kamera zůstává zepředu a jen se mírně kolébá.
 Záložka **Květ**: nafouknutí dlouhým tónem, náklon v rytmu, otáčení květu (a rychlost přepínání druhů — jen když se v
@@ -83,8 +84,9 @@ Záložka **Květ**: nafouknutí dlouhým tónem, náklon v rytmu, otáčení kv
 
 ## Scéna Kytice
 **Plave jako Vortex (stejně jako Květ):** měkká dlouhá mávnutí na rány, znaky se nemíchají, kamera se na doby necuká.
-Dlouhý tón / zpěv kytici rozvine, mírně nafoukne a zhustí kolem ní atmosféru (pak se stáhne); celá kytice se kolébá v rytmu
-od paty jako ve větru; když se písnička rozjede, pomalu se otáčí rychleji a o kus zvětší.
+Dlouhý tón / zpěv kytici rozvine, mírně nafoukne a zhustí kolem ní atmosféru (pak se stáhne); když se písnička rozjede,
+otáčí se rychleji a o kus zvětší. **Tempo**: květy mávnou na každou dobu (mávnutí trvá jednu dobu) a kytice na kopák pumpuje;
+bez houpání (kamera nekolébá výškou ani vzdáleností, náklon v rytmu je ve výchozím stavu vypnutý).
 Posuvníky v záložce Kytice: Nafouknutí dlouhým tónem, Náklon v rytmu, Otáčení kytice.
 
 Kytice se zobrazuje **ve znacích**: obraz se rozdělí na buňky jako terminál a každá buňka dostane znak podle toho, kolik je v ní
