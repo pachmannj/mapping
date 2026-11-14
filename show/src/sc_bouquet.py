@@ -160,9 +160,9 @@ def _update(A, dt, now, solo):
 	push = lp('push', (eS * .15 + surge * .4) * on * P('Qcam'), dt, 1.5, .6)
 	bx = S['bp'] % 1.0
 	push += (math.exp(-bx * 2.0) * min(1.0, bx / .15)) * kR * .05 * P('Qcam')   # kamera se na každou dobu nadechne
-	a = S['ang']
+	a = math.sin(S['ang']) * .35 if solo else S['ang']   # Květ: kamera zůstává zepředu, jen se mírně kolébá (zboku květ není hezký)
 	rad = (4.0 if solo else 4.7) - push + .5 * math.sin(S['bp'] * math.pi / 16)  # přiblížení a oddálení po 8 dobách
-	cx, cy, cz = math.sin(a) * rad, (.25 if solo else .7) + .6 * math.sin(S['bp'] * math.pi / 8), math.cos(a) * rad
+	cx, cy, cz = math.sin(a) * rad, (.25 if solo else .7) + (.25 if solo else .6) * math.sin(S['bp'] * math.pi / 8), math.cos(a) * rad
 	c = q('cam')
 	c.par.tx, c.par.ty, c.par.tz = cx, cy, cz          # natočení řeší Look At na null „target“
 	# ostření: na virbl přeostří na jinou květinu, nejvýš jednou za 4 s, plynule

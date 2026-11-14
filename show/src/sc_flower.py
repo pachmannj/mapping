@@ -1,6 +1,6 @@
 # SCÉNA KVĚT — jedna velká květina ze svítících bodů ve stejném nastavení jako Kytice (znaky / body, rytmus, rány, kamera
 # létá okolo; posuvníky v záložce Kytice platí i tady). Podle beatu a písničky se květina pořád dokola proměňuje
-# v další druhy: lilie → chryzantéma → růže → tulipán → pivoňka → kopretina … Body přeletí obloukem z lístků jednoho
+# v další druhy: lilie → růže → tulipán → pivoňka … Body přeletí obloukem z lístků jednoho
 # druhu do lístků druhého. Čím víc se písnička rozjede, tím častěji se druh mění (každé 2 takty až každé 2 doby),
 # drop přepne hned. Květ se přitom pomalu otáčí kolem své osy, s tempem rychleji.
 import math
@@ -8,7 +8,7 @@ import math
 SHOW = '/project1/show'
 PATH = '/project1/show/flower'
 S = {}
-ORDER = [2, 0, 5, 3, 1, 4]          # lilie, chryzantéma, růže, tulipán, pivoňka, kopretina (čísla druhů v bouquet_sim.glsl)
+ORDER = [2, 5, 3, 1]                # lilie, růže, tulipán, pivoňka (čísla druhů v bouquet_sim.glsl); malé bílé květy vyřazené
 NAMES = {0: 'chryzantéma', 1: 'pivoňka', 2: 'lilie', 3: 'tulipán', 4: 'kopretina', 5: 'růže'}
 
 def P(name): return getattr(op(SHOW).par, name).eval()
