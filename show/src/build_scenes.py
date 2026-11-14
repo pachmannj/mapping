@@ -164,79 +164,42 @@ def build_bird(SH):
 	small = mk(Bc, resolutionTOP, 'mask_small', -700, -200, (key,)); custom_res(small, 64, 36)
 	flap = glsl(Bc, 'flap', 'bird_flap.glsl', -500, 0, ['uF0', 'uF1'], (key,))
 	for n, v in (('vec0valuex', .5), ('vec0valuey', .5), ('vec0valuez', 1), ('vec1valuey', .05), ('vec1valuez', .3), ('vec1valuew', 1.78)): setp(flap, n, v)
-	PW, PH = 480, 270                                                  # 130 tisíc částic = pixely ptáka
-	zero = mk(Bc, constantTOP, 'zero', -500, -300); custom_res(zero, PW, PH); setp(zero, 'format', 'rgba32float')
-	for n in ('colorr', 'colorg', 'colorb', 'alpha'): setp(zero, n, 0)
-	fb = mk(Bc, feedbackTOP, 'state', -300, -300, (zero,))
-	parts = glsl(Bc, 'parts', 'bird_parts.glsl', -100, -300, ['uP0', 'uP1', 'uP2'], (fb, flap), 'rgba32float')
-	setp(parts, 'numcolorbufs', 3); fb.par.top = parts
-	for n, v in (('vec0valuew', 3.5), ('vec1valuew', 1.78)): setp(parts, n, v)
-	pos = mk(Bc, renderselectTOP, 'pos', 100, -250); pos.par.top = parts; setp(pos, 'bufferindex', 1); setp(pos, 'format', 'rgba32float')
-	col = mk(Bc, renderselectTOP, 'col', 100, -350); col.par.top = parts; setp(col, 'bufferindex', 2); setp(col, 'format', 'rgba16float')
-	m = instmat(Bc, 'mat', pos, col, 300, -450)
-	instgeo(Bc, 'geo', m, PW * PH, 500, -450)
-	cam = mk(Bc, cameraCOMP, 'cam', 500, -600); setp(cam, 'projection', 'ortho'); setp(cam, 'orthowidth', 2 * 16 / 9); cam.par.tz = 5
-	rend = mk(Bc, renderTOP, 'render', 700, -400)
-	rend.par.camera = cam.path; rend.par.geometry = 'geo'
-	res(rend, 'rgba16float'); black_bg(rend)
-	photo = mk(Bc, levelTOP, 'photo_lvl', -300, 0, (flap,))
-	mix = mk(Bc, compositeTOP, 'mix', 900, 0, (photo, rend)); setp(mix, 'operand', 'add')
-	# ── historie snímků (60 snímků, 640×360) pro slit-scan a chronofotografii ──
-	sway = mk(Bc, transformTOP, 'sway', -500, 400, (flap,)); setp(sway, 'extend', 'zero')   # houpání v rytmu: kopie v čase se rozestoupí
-	hsrc = mk(Bc, resolutionTOP, 'hist_src', -300, 400, (sway,)); custom_res(hsrc, 640, 360); setp(hsrc, 'format', 'rgba8fixed')
-	hist = mk(Bc, texture3dTOP, 'hist', -100, 400, (hsrc,)); setp(hist, 'cachesize', 60)
-	tmap = glsl(Bc, 'tmap', 'bird_tmap.glsl', -100, 600, ['uT0', 'uT1'], fmt='rgba8fixed'); custom_res(tmap, 320, 180)
-	for n_, v_ in (('vec0valuez', .5), ('vec0valuew', .5), ('vec1valuex', 1), ('vec1valuez', 1.78)): setp(tmap, n_, v_)
-	slit = mk(Bc, timemachineTOP, 'slit', 100, 500, (hist, tmap))
-	setp(slit, 'blackoffsetunit', 'frames'); setp(slit, 'whiteoffsetunit', 'frames'); setp(slit, 'blackoffset', 0); setp(slit, 'whiteoffset', 30)
-	zmap = mk(Bc, constantTOP, 'zero_map', -100, 750); custom_res(zmap, 16, 9)
-	for n_ in ('colorr', 'colorg', 'colorb'): setp(zmap, n_, 0)
-	echoes = [hsrc]
-	for i in range(1, 6):                                             # kopie ptáka z postupně starších okamžiků
-		e_ = mk(Bc, timemachineTOP, 'echo%d' % i, 100 + i * 130, 750, (hist, zmap))
-		setp(e_, 'blackoffsetunit', 'frames'); setp(e_, 'whiteoffsetunit', 'frames'); setp(e_, 'blackoffset', i * 6); setp(e_, 'whiteoffset', i * 6)
-		echoes.append(e_)
-	chrono = glsl(Bc, 'chrono', 'bird_chrono.glsl', 900, 700, ['uC0', 'uC1'], tuple(echoes))
-	setp(chrono, 'vec0valuex', 1); setp(chrono, 'vec0valuey', .7)
-	izero = mk(Bc, constantTOP, 'ink_zero', 300, 1000); custom_res(izero, 640, 360); setp(izero, 'format', 'rgba16float')
-	for n_ in ('colorr', 'colorg', 'colorb'): setp(izero, n_, 0)
-	ifb = mk(Bc, feedbackTOP, 'ink_fb', 500, 1000, (izero,))
-	ink = glsl(Bc, 'ink', 'bird_ink.glsl', 700, 1000, ['uI0', 'uI1'], (ifb, flap))
-	ifb.par.top = ink
-	for n_, v_ in (('vec0valuez', .9), ('vec1valuez', 1.78), ('vec1valuew', 2)): setp(ink, n_, v_)
-	look = glsl(Bc, 'look', 'bird_look.glsl', 1100, 300, ['uL0', 'uL1'], (mix, slit, chrono, ink), custom_res=True)
-	setp(look, 'vec0valuex', 1); setp(look, 'vec1valuez', 1)
-	ctr = mk(Bc, transformTOP, 'center', 1200, 450, (look,)); setp(ctr, 'extend', 'zero')     # pták doprostřed, ať se zrcadlí on, ne obloha
-	fold = glsl(Bc, 'fold', 'krasohled_mirrors.glsl', 1300, 300, ['uM0', 'uM1'], (ctr,))   # kaleidoskop (stejný shader jako Krasohled)
-	setp(fold, 'vec1valuez', 1.78); setp(fold, 'vec1valuey', 4)
-	fmix = mk(Bc, crossTOP, 'fold_mix', 1450, 300, (look, fold))      # kaleidoskop se plynule prolne, neskočí
-	tr = trails(Bc, fmix, 1600, 300)
-	glow = bloom(Bc, tr, 2300, 300, "0.5")
-	mk(Bc, nullTOP, 'out1', 2900, 300, (glow,))
+	ctr = mk(Bc, transformTOP, 'center', -300, 0, (flap,)); setp(ctr, 'extend', 'zero')     # pták doprostřed karty
+	sm = mk(Bc, resolutionTOP, 'bird_sm', -100, 0, (ctr,)); custom_res(sm, 960, 540); setp(sm, 'format', 'rgba16float')
+	zero = mk(Bc, constantTOP, 'reel_zero', -100, -250); custom_res(zero, 960, 540); setp(zero, 'format', 'rgba16float')
+	for n in ('colorr', 'colorg', 'colorb'): setp(zero, n, 0)
+	fb = mk(Bc, feedbackTOP, 'reel_fb', 100, -250, (zero,))
+	reel = glsl(Bc, 'reel', 'bird_reel.glsl', 300, 0, ['uR0', 'uR1', 'uR2'], (fb, sm))
+	setp(reel, 'numcolorbufs', 2); fb.par.top = reel
+	for n, v in (('vec0valuex', -2), ('vec0valuey', -1), ('vec0valuez', .9), ('vec0valuew', 1), ('vec1valuex', 6), ('vec1valuey', 1),
+	             ('vec1valuew', 6), ('vec2valuex', 1), ('vec2valuey', 1)): setp(reel, n, v)
+	col = mk(Bc, renderselectTOP, 'reel_col', 500, 0); col.par.top = reel; setp(col, 'bufferindex', 1); setp(col, 'format', 'rgba16float')
+	win = window3d(Bc, col, 700, 0)
+	glow = bloom(Bc, win, 1200, 0, "0.5")
+	mk(Bc, nullTOP, 'out1', 1800, 0, (glow,))
 
 # ───────────────────────── KVĚT (skutečná lilie) ─────────────────────────
+def window3d(parent, obj, x, y):
+	"""3D okno ve zdi (src/glsl/window3d.glsl): objekt jako karta v anamorfním výklenku; ovládá ho modul scény"""
+	ob = mk(parent, blurTOP, 'obj_blur', x, y - 200, (obj,)); setp(ob, 'size', 20)
+	w = glsl(parent, 'window', 'window3d.glsl', x + 200, y, ['uW0', 'uW1', 'uW2', 'uW3', 'uW4', 'uW5'], (obj, ob), custom_res=True)
+	for n_, v_ in (('vec0valuez', 3), ('vec0valuew', 1.78), ('vec1valuex', .84), ('vec1valuey', .62), ('vec1valuez', 1.2), ('vec1valuew', 1),
+	               ('vec2valuez', -.5), ('vec2valuew', .5), ('vec3valuex', 1), ('vec3valuez', 1.5), ('vec3valuew', 1.5), ('vec5valuez', 1)):
+		setp(w, n_, v_)                                                  # bezpečné výchozí hodnoty (žádné dělení nulou)
+	return w
+
 def build_flower(SH):
 	Fc = mk(SH, baseCOMP, 'flower', -1100, -750)
 	src = mk(Fc, moviefileinTOP, 'frame_src', -800, 0); src.par.file = 'media/lily/f_01.jpg'
 	ph = mk(Fc, texture3dTOP, 'phases', -600, 0, (src,))                # 64 fází rozkvětu; plní je sc_flower.preload()
 	for n_, v_ in (('cachesize', 64), ('active', False), ('replacesingle', True)): setp(ph, n_, v_)
-	arr = glsl(Fc, 'arrival', 'lily_arrival.glsl', -400, -300, [], (ph,))   # mapa času příchodu (vaří se jen po nahrání fází)
+	arr = glsl(Fc, 'arrival', 'lily_arrival.glsl', -400, -300, [], (ph,))   # mapa času příchodu (okraj růstu svítí na hi-hatech)
 	custom_res(arr, 720, 720)
 	ab = mk(Fc, blurTOP, 'arrival_blur', -200, -300, (arr,)); setp(ab, 'size', 6)
-	lily = glsl(Fc, 'lily', 'lily.glsl', 0, 0, ['uB0', 'uB1', 'uB2', 'uB3', 'uL0', 'uL1', 'uL2'], (ab, ph), custom_res=True)
-	for n_, v_ in (('vec0valuex', .3), ('vec1valuex', .5), ('vec1valuey', .63), ('vec1valuez', .32), ('vec1valuew', 12),
-	               ('vec3valuex', 1), ('vec3valuey', 1), ('vec3valuez', 1), ('vec3valuew', 1.78)): setp(lily, n_, v_)   # bezpečné výchozí hodnoty
-	vol = glsl(Fc, 'vol', 'lily_vol.glsl', 0, 300, ['uV0', 'uV1', 'uV2', 'uV3', 'uL0', 'uL1', 'uL2'], (ph,))
-	custom_res(vol, 960, 540)
-	for n_, v_ in (('vec0valuey', .4), ('vec1valuex', .5), ('vec1valuey', .63), ('vec1valuez', .34), ('vec1valuew', 1.78),
-	               ('vec2valuez', 1), ('vec2valuew', 1), ('vec3valuey', 8), ('vec3valuez', 1)): setp(vol, n_, v_)
-	gz = mk(Fc, constantTOP, 'grow_zero', -200, 600); setp(gz, 'format', 'rgba16float'); res(gz)
-	for n_, v_ in (('colorr', 0), ('colorg', 0), ('colorb', 0), ('alpha', 1)): setp(gz, n_, v_)
-	gfb = mk(Fc, feedbackTOP, 'grow_fb', 0, 600, (gz,))
-	grow = glsl(Fc, 'grow', 'lily_grow.glsl', 200, 600, ['uG0', 'uG1', 'uG2', 'uG3'], (gfb, ab, ph), custom_res=True)
-	gfb.par.top = grow
-	for n_, v_ in (('vec0valuez', .9), ('vec1valuex', .5), ('vec1valuey', .63), ('vec1valuew', 1.78), ('vec2valuex', 1)): setp(grow, n_, v_)
-	mix_ = glsl(Fc, 'look', 'lily_mix.glsl', 500, 0, ['uX0'], (lily, vol, grow), custom_res=True)
-	setp(mix_, 'vec0valuey', 1)
-	glow = bloom(Fc, mix_, 800, 0, "0.6")
+	lily = glsl(Fc, 'lily', 'lily.glsl', 0, 0, ['uB0', 'uB1', 'uB2', 'uB3', 'uL0', 'uL1', 'uL2'], (ab, ph))
+	custom_res(lily, 720, 720)
+	for n_, v_ in (('vec0valuex', .3), ('vec1valuex', .5), ('vec1valuey', .5), ('vec1valuez', .32), ('vec1valuew', 12),
+	               ('vec3valuex', 1), ('vec3valuey', 1), ('vec3valuez', 1), ('vec3valuew', 1)): setp(lily, n_, v_)   # bezpečné výchozí hodnoty
+	win = window3d(Fc, lily, 300, 0)
+	glow = bloom(Fc, win, 800, 0, "0.45")
 	mk(Fc, nullTOP, 'out1', 1400, 0, (glow,))

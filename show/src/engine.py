@@ -215,10 +215,18 @@ def reinit(name, want):
 	D['re_' + name] = (2, want)
 
 def devices(now):
-	live = P('Source') == 'live'
-	key = (live, P('Inputdevice'))
+	live = P('Source') in ('live', 'mac')
+	key = (live, P('Source'), P('Inputdevice'))
 	if key != D.get('akey'):
-		D['akey'] = key; reinit('a_live', live); D['aT'] = now
+		D['akey'] = key; D['aT'] = now
+		al = O('a_live')
+		if P('Source') == 'mac':                         # zvuk z Macu (Spotify…): smyčkové zařízení BlackHole
+			names = [n for n, l in zip(al.par.device.menuNames, al.par.device.menuLabels) if 'blackhole' in (n + l).lower()]
+			if names: al.par.device.expr = ''; al.par.device = names[0]
+			else: debug('BlackHole není nainstalovaný → zvuk z Macu nejde zachytit (viz NÁVOD.md, Spotify)')
+		else:
+			al.par.device.expr = "parent().par.Inputdevice"
+		reinit('a_live', live)
 	elif live and A['silentFor'] > 5 and now - D.get('aT', 0) > 5:
 		D['aT'] = now; reinit('a_live', True)
 		debug('živý vstup bez signálu → znovu otevírám', P('Inputdevice'))

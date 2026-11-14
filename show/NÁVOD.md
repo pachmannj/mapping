@@ -44,23 +44,34 @@ Audio-reaktivní projekce na průhledné plátno. Projekt: `DJ_Show.toe` (TouchD
 | výstup na špatném monitoru | `Output` → `Monitor projektoru` (0 = hlavní displej, -1 = poslední připojený) → **Otevřít výstup** |
 | obraz je šedivý / „mlha“ | zvyš `Odříznutí černé`, sniž `Master jas`, vypni haze v sále |
 
+## Spotify (nebo jakýkoli zvuk z Macu)
+Spotify zvuk nikomu jinému nepustí ven přímo, takže se zachytává to, co Mac hraje, přes virtuální kabel **BlackHole** (zdarma).
+1. Nainstaluj ho (jednou, zeptá se na heslo k Macu): v Terminálu `brew install blackhole-2ch`, pak Mac restartuj.
+2. Otevři **Nastavení Audio MIDI** → vlevo dole **+** → **Vytvořit zařízení s více výstupy** → zaškrtni **BlackHole 2ch**
+   a svoje reproduktory / sluchátka (u reproduktorů zapni *Opravu posunu*).
+3. V liště nahoře (ikona zvuku) vyber jako výstup to nové **Zařízení s více výstupy** — Spotify pak hraje do reproduktorů i do TD.
+4. V TD záložka **Audio** → `Zdroj zvuku` → **Zvuk z Macu (Spotify přes BlackHole)**. Zařízení BlackHole se vybere samo.
+Bez instalace jde nouzově `Živý vstup` + mikrofon MacBooku (zachytí reproduktory, ale reaguje hůř).
+
+## 3D okno (Pták a Květ)
+Anamorfní iluze jako na billboardech v New Yorku: obraz na zdi je přesně ta perspektiva, kterou by divák viděl skrz skutečný
+výklenek ve zdi. Objekt v něm má stín na podlaze a stěnách, odlesk na podlaze a svítí na stěny; když vyleze před zeď,
+přeroste svítící rám otvoru a osvítí zeď kolem. Iluze je nejsilnější z místa, kde stojí publikum — nastav v záložce **3D okno**
+`Výška očí diváka` (0 = oči ve výšce středu obrazu, záporné = níž) a `Vzdálenost diváka` (v násobcích výšky obrazu na zdi).
+Dále hloubka a velikost výklenku, jak moc objekt vylézá, svítící hrany, mřížka, stín, odlesk a světlo objektu na zeď.
+Žádný automatický režisér — scény vypadají pořád stejně a reagují jen na hudbu.
+
 ## Scéna Pták
-Racek ze stock videa vyříznutý z oblohy: na každý kopák máchne křídly (rychlost mávání podle tempa),
-na silný úder se rozpadne na částice a zase složí, za ním zůstávají světelné stopy (delší při plné hudbě).
-Vnitřní režisér střídá looky podle hudby (klid = spíš reál, plná hudba a dropy = abstrakce):
-**Reál** (fotka), **Chronofoto** (kopie ptáka v čase jako na Mareyho fotografiích), **Slit-scan** (každá část obrazu z jiného okamžiku),
-**Inkoust** (obrys se rozpíjí do kouře), **Kaleidoskop** (pták zrcadlený do symetrického tvora).
-Záložka **Pták**: Look (AUTO nebo ruční volba), Abstrakce (jak často sahá po abstraktních lookách), síla máchnutí, rozpad na částice,
-stopy, rychlost videa, velikost částic, jas.
+Racek ze stock videa vyříznutý z oblohy krouží ve 3D okně a s energií hudby z něj vylétá před zeď.
+Styl ze čtyř vrstev: šedé tělo s bílým obrysem, tyrkysové světelné stopy za pohybem, červeno-oranžový barevný lem a rastr z teček.
+Kopák = máchnutí křídly, záblesk obrysu a postrčení z okna; virbl a hi-haty = rastr z teček a lem.
+Záložka **Pták**: síla máchnutí, světelné stopy, barevný lem, rastr z teček, rychlost videa, velikost ptáka, jas.
 
 ## Scéna Květ
-Skutečná lilie z časosběru (64 fází rozkvětu načtených po startu do paměti grafiky, asi 4 s): hudba řídí, jak moc je rozkvetlá —
-v tichu se zavře do pupenu, s energií rozkvete, kopák ji „nadechne“. Lilie se nenaklání, nic se neozvěňuje. Z fází se jednou spočítá
-mapa času růstu (kdy do kterého místa květ doroste) a z ní žijí netradiční looky, které vnitřní režisér střídá:
-**Reál** (lilie; místo, kde právě raší, se rozsvítí na hi-hatech), **Mapa času** (vrstevnice růstu květu, každá svítí podle svého pásma,
-kopák pošle vlnu od pupenu ven), **Časová socha** (celý rozkvět jako 3D objekt — čas je hloubka, obrysy všech fází jsou svítící vrstvy,
-aktuální lilie je uvnitř), **Proudy růstu** (barva teče z rašícího okraje ve směru, kterým květ rostl, a za lístky ven do prostoru).
-Záložka **Květ**: Look, Abstrakce, citlivost rozkvětu, síla efektů, přiblížení, jas.
+Skutečná lilie z časosběru (64 fází rozkvětu načtených po startu do paměti grafiky, asi 4 s) stojí ve 3D okně:
+v tichu se zavře do pupenu hluboko ve výklenku, s energií hudby rozkvete a vyleze z okna před zeď. Kopák ji „nadechne“
+a postrčí dopředu, místo, kde právě raší, se rozsvítí na hi-hatech.
+Záložka **Květ**: citlivost rozkvětu, velikost květu, jas.
 
 ## Pro úpravy
 - Zdrojáky jsou ve `src/` (Python + GLSL), TouchDesigner je čte ze souborů a změny se projeví hned.

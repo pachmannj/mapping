@@ -97,7 +97,7 @@ T(pg, 'Strobe', 'Stroboskop na kopák  [S]', False)
 PU(pg, 'Flash', 'Záblesk  [F]')
 
 pg = page('Audio')
-M(pg, 'Source', 'Zdroj zvuku', ['file', 'live'], ['Demo soubory (složka music)', 'Živý vstup (linka z mixu)'], 'file')
+M(pg, 'Source', 'Zdroj zvuku', ['file', 'live', 'mac'], ['Demo soubory (složka music)', 'Živý vstup (linka z mixu)', 'Zvuk z Macu (Spotify přes BlackHole)'], 'file')
 p = pg.appendStrMenu('Inputdevice', label='Vstupní zařízení')[0]; p.menuSource = "op('./a_live').par.device"; p.default = p.val = 'default'
 F(pg, 'Gain', 'Zesílení vstupu', 1, 0, 8)
 p = pg.appendFolder('Musicfolder', label='Složka s hudbou (prázdné = ../music)')[0]; p.default = p.val = ''
@@ -155,15 +155,18 @@ F(pg, 'Etrails', 'Ozvěny (stopy)', 0, 0, .97); F(pg, 'Ebright', 'Jas', 1.984, 0
 F(pg, 'Epixmusic', 'Pixelace podle hudby', 2, 0, 2)
 
 pg = page('Pták')
-M(pg, 'Blook', 'Look', ['auto', 'real', 'chrono', 'slit', 'ink', 'kaleido'], ['AUTO (režisér podle hudby)', 'Reál (fotka)', 'Chronofoto (kopie v čase)', 'Slit-scan (čas po pixelech)', 'Inkoust / kouř', 'Kaleidoskop'], 'auto')
-F(pg, 'Babstract', 'Abstrakce', .6, 0, 1)
-F(pg, 'Bflap', 'Síla máchnutí', 1, 0, 2); F(pg, 'Bdissolve', 'Rozpad na částice', 1, 0, 2); F(pg, 'Btrails', 'Stopy', .8, 0, 1.1)
-F(pg, 'Bspeed', 'Rychlost videa', 1, 0, 3); F(pg, 'Bsize', 'Velikost částic (px)', 1.6, .5, 5); F(pg, 'Bbright', 'Jas', 1.2, 0, 3)
+F(pg, 'Bflap', 'Síla máchnutí', 1, 0, 2); F(pg, 'Btrails', 'Světelné stopy', .8, 0, 1.1)
+F(pg, 'Bfringe', 'Barevný lem', 1, 0, 2); F(pg, 'Bhalftone', 'Rastr z teček (podle hudby)', 1, 0, 2)
+F(pg, 'Bspeed', 'Rychlost videa', 1, 0, 3); F(pg, 'Bsize', 'Velikost ptáka', 1, .4, 2); F(pg, 'Bbright', 'Jas', 1.2, 0, 3)
 
 pg = page('Květ')
-M(pg, 'Flook', 'Look', ['auto', 'real', 'map', 'sculpt', 'flow'], ['AUTO (režisér podle hudby)', 'Reál (lilie)', 'Mapa času (vrstevnice růstu)', 'Časová socha (rozkvět jako 3D objem)', 'Proudy růstu'], 'auto')
-F(pg, 'Fabstract', 'Abstrakce', .5, 0, 1); F(pg, 'Fbloom', 'Citlivost rozkvětu', 1, 0, 2); F(pg, 'Fspread', 'Síla efektů', 1, 0, 2)
-F(pg, 'Fzoom', 'Přiblížení', 1, .5, 2.5); F(pg, 'Fbright', 'Jas', 1.1, 0, 3)
+F(pg, 'Fbloom', 'Citlivost rozkvětu', 1, 0, 2); F(pg, 'Fsize', 'Velikost květu', 1, .4, 2); F(pg, 'Fbright', 'Jas', 1.1, 0, 3)
+
+pg = page('3D okno')                                   # společné pro Ptáka a Květ: anamorfní výklenek ve zdi
+F(pg, 'Weye', 'Výška očí diváka (0 = střed obrazu)', 0, -1.5, 1.5); F(pg, 'Wdist', 'Vzdálenost diváka (výšky obrazu)', 3, 1, 8)
+F(pg, 'Wdepth', 'Hloubka výklenku', 1.5, .2, 3); F(pg, 'Wsize', 'Velikost otvoru', .8, .2, 1)
+F(pg, 'Wpop', 'Vylézání z okna', 1, 0, 2); F(pg, 'Wedges', 'Svítící hrany', 1, 0, 3); F(pg, 'Wgrid', 'Mřížka', .4, 0, 2)
+F(pg, 'Wshadow', 'Stín', .8, 0, 1); F(pg, 'Wrefl', 'Odlesk na podlaze', .35, 0, 1); F(pg, 'Wlight', 'Světlo objektu na zeď', 1, 0, 3)
 
 pg = page('Heat')
 F(pg, 'Hlife', 'Životnost bodů (s)', 1, 1, 25); F(pg, 'Hflow', 'Proudění', .701, 0, 3); F(pg, 'Hrise', 'Stoupání tepla', 0, 0, 3)
@@ -187,7 +190,7 @@ expr(af, 'play', "parent().par.Source == 'file'")
 al = mk(SH, audiodeviceinCHOP, 'a_live', -1400, 300)
 setp(al, 'active', False); expr(al, 'device', "parent().par.Inputdevice")      # zapíná engine.devices()
 setp(al, 'format', 'stereo'); setp(al, 'ratemode', 'auto')
-sw = mk(SH, switchCHOP, 'a_src', -1200, 380, (af, al)); expr(sw, 'index', "1 if parent().par.Source == 'live' else 0")
+sw = mk(SH, switchCHOP, 'a_src', -1200, 380, (af, al)); expr(sw, 'index', "1 if parent().par.Source in ('live', 'mac') else 0")
 ain = mk(SH, nullCHOP, 'a_in', -1000, 380, (sw,))
 mon = mk(SH, mathCHOP, 'a_mon', -1200, 520, (af,)); expr(mon, 'gain', "parent().par.Volume")
 aout = mk(SH, audiodeviceoutCHOP, 'a_out', -1000, 520, (mon,)); setp(aout, 'active', False)          # zapíná engine.devices()

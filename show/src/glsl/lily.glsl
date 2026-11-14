@@ -47,5 +47,7 @@ void main() {
 		vec3 iso = phase(t, w) * .12 + lc + fr + hue(uB2.w + .5) * wave * 1.5;
 		col += iso * uB0.w;
 	}
-	fragColor = TDOutputSwizzle(vec4(max(col, 0.) * uB3.z, 1.));
+	col = max(col, 0.) * uB3.z;
+	float al = smoothstep(.03, .12, dot(col, vec3(.3, .5, .2))) * smoothstep(.0, .18, t.y);      // alfa pro 3D okno: černé pozadí videa je průhledné
+	fragColor = TDOutputSwizzle(vec4(col * al, al));
 }
