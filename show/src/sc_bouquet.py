@@ -172,7 +172,8 @@ def _update(A, dt, now, solo):
 		setv(g, 8 + i, (S['t'] - h[0], h[1], h[2], h[3]))
 	# délka mávnutí podle tempa (~1 doba), rychlost šíření vlny kyticí roste s tempem
 	flapT = min(1.8, max(.8, 2.0 * 60.0 / max(60.0, bpm))) * 1.6   # mávnutí delší a měkčí (plave jako Vortex)
-	setv(g, 12, (flapT, 1.3 * (bpm / 120.0), S['bp'], 0))   # mávnutí ~2 doby, vlna pomalu
+	if on and A['kickHit']: S['kn'] = S.get('kn', 0) + 1; S['kt'] = S['t']      # bliknutí lilií vzadu (Květ) přímo na kopák
+	setv(g, 12, (flapT, 1.3 * (bpm / 120.0), S.get('kn', 0) % 6, S['t'] - S.get('kt', -9.0)))   # mávnutí ~2 doby, vlna pomalu
 	# KVĚT (jedna květina): druh A → B, morf, otočení, velikost — vybírá sc_flower.py podle beatu a písničky
 	if solo:
 		ta, tb, m, spin, (size, infl, tilt) = solo(S, A, dt, now, dict(on=on, bp=S['bp'], bpm=bpm, inten=inten, surge=surge, kR=kR))
