@@ -207,8 +207,8 @@ def build_flower(SH):
 # ───────────────────────── KYTICE (květiny z bodů) ─────────────────────────
 def build_bouquet(SH):
 	Q = mk(SH, baseCOMP, 'bouquet', -1100, -900)
-	PW, PH = 1024, 512                                                  # 524 tisíc bodů
-	sim = glsl(Q, 'sim', 'bouquet_sim.glsl', -400, 0, ['uA0', 'uA1', 'uA2', 'uL0', 'uL1', 'uL2'], fmt='rgba32float')
+	PW, PH = 1024, 640                                                  # 655 tisíc bodů
+	sim = glsl(Q, 'sim', 'bouquet_sim.glsl', -400, 0, ['uA0', 'uA1', 'uA2', 'uA3', 'uL0', 'uL1', 'uL2'], fmt='rgba32float')
 	custom_res(sim, PW, PH); setp(sim, 'numcolorbufs', 2)
 	for n_, v_ in (('vec0valuey', .6), ('vec1valuex', 9), ('vec1valuew', 1), ('vec2valuez', 1)): setp(sim, n_, v_)
 	col = mk(Q, renderselectTOP, 'col', -200, -100); col.par.top = sim; setp(col, 'bufferindex', 1); setp(col, 'format', 'rgba16float')
