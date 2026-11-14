@@ -63,11 +63,14 @@ def update(A, dt, now):
 	speed = lp('spd', (.3 + eS * 1.0 + bS * .7 + inten * .8 + surge * 1.6) * (tempo if on else 1) + (0 if on else .15), dt, 1.2, .6)
 	S['ph'] += dt * speed
 	# kopák: měkká vlna po lístcích (náběh vyhlazený)
-	if A['kickHit'] and on and S['wave'] > .5:
+	# vlna světla po lístcích: jakmile se spustí, VŽDY proběhne celou kytici od středu ke špičkám (i když byl tón krátký);
+	# síla se nezhasíná časem, ale tvarem podle toho, kde vlna je (plynule naběhne, uprostřed nejsilnější, na špičkách dozní).
+	# Další vlna se spustí, až ta předchozí doběhne skoro na konec, takže se nic neusekne.
+	if A['kickHit'] and on and S['wave'] > 1.45:
 		S['wave'] = 0.0; S['kick'] = (.5 + A['kickHit'] * .6) * R * P('Qwave')
 	S['wave'] += dt * (.9 + tempo * .4)
-	S['kick'] *= math.exp(-dt * 1.5)
-	waveA = lp('waveA', S['kick'], dt, 9.0, 3.0)
+	wpos = min(1.0, S['wave'] / 1.5)
+	waveA = S['kick'] * math.sin(math.pi * wpos) ** 1.5 if S['wave'] < 1.5 else 0.0
 	# pásma: rychlé vyhlazení + pomalý průměr → každá květina reaguje na změny ve svém pásmu, ne na hlasitost
 	lob = A['LOB'] if on else [.4 + .2 * math.sin(S['t'] * .5 + i) for i in range(12)]
 	fa, fs = 1 - math.exp(-dt * 4.0), 1 - math.exp(-dt / 6.0)
@@ -86,7 +89,7 @@ def update(A, dt, now):
 	breathe = lp('brth', A['kickEnv'] * on * R, dt, 5.0, 2.0)
 	wind = lp('wind', .3 + (eS * .6 + bS * .4 + inten * .6 + surge * 1.2) * R * on, dt, 1.0, .5)
 	und = lp('und', .45 + (eS * .6 + bS * .4 + inten * .6 + surge * 1.0) * on, dt, 1.0, .5)
-	glow = lp('glow', (A['kickEnv'] * .8 + surge * .6) * on * R, dt, 6.0, 2.0)
+	glow = lp('glow', (waveA * .7 + surge * .6) * on * R, dt, 4.0, 2.0)   # záře lilií jde s vlnou (žádné bliknutí)
 	# barvy lilií: odstín se posouvá rychlostí podle intenzity (v klidu skoro stojí), rozptyl mezi liliemi roste s rozjezdem
 	S['hue'] = S.get('hue', 0.0) + dt * (.02 + (inten * .25 + surge * .9 + A['centroid'] * .1) * on * P('Qhue'))
 	spread = lp('hsp', (.15 + inten * .25 + surge * .3) * on * P('Qhue') + .1, dt, 1.0, .4)

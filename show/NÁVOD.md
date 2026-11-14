@@ -86,7 +86,7 @@ Záložka **Květ**: nafouknutí dlouhým tónem, náklon v rytmu, otáčení kv
 (Vrácená verze bez znaků a bez rytmických hodin.) Kytice ze svítících bodů: pět růžových lilií, tři chryzantémy, dvě pivoňky,
 stonky, listy a pyl ve vzduchu. Kamera se pomalu kývá před kyticí s malou hloubkou ostrosti (rozmazané světelné skvrny).
 Pohyb je organický a plynulý: vítr kývá květy na stoncích, po lístcích běží vlny, mlha proudí polem; květy se nezavírají.
-Kopák pošle po lístcích vlnu světla od středu ke špičkám a lilie se rozzáří, každá květina poslouchá své frekvenční pásmo,
+Kopák pošle po lístcích vlnu světla od středu ke špičkám — vždy proběhne celou kytici a plynule dozní (i krátký tón), další vlna přijde, až ta předchozí doběhne; lilie se rozzáří spolu s vlnou, každá květina poslouchá své frekvenční pásmo,
 lilie mění barvy podle hudby (korálová ↔ růžová ↔ fialová), rozjezd písničky kytici rozpohybuje a drop ji rozvlní a rozpustí do mlhy.
 Záložka **Kytice**: citlivost rozkvětu, rozpad do mlhy, vlna kopáku, hloubka ostrosti, pohyb kamery, velikost bodů, jas,
 sytost barev, měnění barev lilií. (Ostatní posuvníky v záložce — styl znaků, velikost znaků… — platí pro Květ a Ptáka.)
