@@ -120,15 +120,15 @@ def update(A, dt, now):
 	ascii_pass(A, dt, on, R)
 
 def ascii_pass(A, dt, on, R):
-	"""znaky jako v Kytici: velikost podle tempa (pomalá = velké), kopák je prudce zvětší (nájezd ze středu), na kopák se zamíchají"""
+	"""znaky jako v Kytici: velikost podle hlasitosti (hlasitější = větší)"""
 	def lp(key, x, rate):
 		v = S.setdefault(key, x); S[key] = v + (x - v) * (1 - math.exp(-dt * rate)); return S[key]
 	bpm = A['bpm'] if (on and A['bpm']) else 100.0
-	cell = lp('aCell', 16.0 - (min(170.0, max(70.0, bpm)) - 70.0) / 10.0 if on else 13.0, .35)
-	if on and A['kickHit']: S['aPulse'] = max(S.get('aPulse', 0.0), min(1.0, .5 + A['kickHit'] * .6))
-	S['aPulse'] = S.get('aPulse', 0.0) * math.exp(-dt * 4.5)
-	cp = lp('aCp', S['aPulse'], 30.0)
-	cell *= 1 + cp * 1.4 * P('Qcellbeat')
+	# velikost znaků = jen hlasitost (jako Kytice a Květ)
+	loud = S.setdefault('aLoud', 0.0); e = A['energy'] * on
+	S['aLoud'] = loud + (e - loud) * (1 - math.exp(-dt * (30.0 if e > loud else 8.0)))
+	cell = 6.0 + S['aLoud'] * 14.0 * P('Qcellbeat')
+	cp = 0.0
 	sty = {'points': 0, 'ascii': 1, 'letters': 2}.get(P('Qstyle'), 1)
 	scr = cp * .25 * R
 	setv(k('ascii'), 0, (cell * P('Qcell') / 9.0, sty, 2.1, 0))

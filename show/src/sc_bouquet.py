@@ -175,14 +175,9 @@ def _update(A, dt, now, solo):
 	# znaky: styl, velikost buňky (s hutností o kousek menší = jemnější), zamíchání znaků na dobu
 	sty = {'points': 0, 'ascii': 1, 'letters': 2}.get(P('Qstyle'), 1)
 	scr = (math.exp(-bx * 4.0) * min(1.0, bx / .05)) * (kR * .2 + sR * .1) + surge * .15
-	# velikost znaků podle tempa: pomalá písnička = velké znaky, rychlá = malé (plynule, ať mřížka necuká)
-	tcell = 16.0 - (min(170.0, max(70.0, bpm)) - 70.0) / 100.0 * 10.0 if on else 13.0
-	cell = lp('cell', tcell, dt, .35)
-	# PULZ ZNAKŮ NA BEAT: kopák znaky prudce zvětší (nájezd ze středu), během doby se zase zmenší; drop ještě víc
-	if on and A['kickHit']: S['cpT'] = max(S.get('cpT', 0.0), min(1.0, .5 + A['kickHit'] * .6) * (1 + surge * .6))
-	S['cpT'] = S.get('cpT', 0.0) * math.exp(-dt * 4.5)
-	cp = lp('cp', S['cpT'], dt, 5.0, 2.5) * .6 if solo else lp('cp', S['cpT'], dt, 30.0, 30.0)   # Květ: znaky dýchají měkce
-	cell *= 1 + cp * 1.4 * P('Qcellbeat')
+	# VELIKOST ZNAKŮ = JEN HLASITOST: čím hlasitější zvuk, tím větší znaky (okamžitý náběh, rychlý doběh → žádné zpoždění)
+	loud = lp('loud', A['energy'] * on, dt, 30.0, 8.0 if not solo else 4.0)
+	cell = 6.0 + loud * 14.0 * P('Qcellbeat')
 	setv(q('ascii'), 0, (cell * P('Qcell') / 9.0, sty, 2.1, 0))   # pod znaky už nejsou vidět původní body
 	setv(q('ascii'), 1, (S['t'], 0 if solo else min(.8, scr), P('Qcolor'), 0))
 	r = q('render')

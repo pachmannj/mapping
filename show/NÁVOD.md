@@ -67,7 +67,7 @@ který se s hloubkou vzdaluje a měkne. Zapíná se přepínačem `Výklenek`.
 Racek ze stock videa vyříznutý z oblohy krouží ve 3D okně a s energií hudby z něj vylétá před zeď.
 Styl ze čtyř vrstev: šedé tělo s bílým obrysem, tyrkysové světelné stopy za pohybem, červeno-oranžový barevný lem a rastr z teček.
 Kopák = máchnutí křídly, záblesk obrysu a postrčení z okna; virbl a hi-haty = rastr z teček a lem.
-Výsledek se převádí **na znaky jako Kytice a Květ** (styl, velikost podle tempa a pulz na beat ze záložky Kytice; ve stylu Body je pták jako dřív).
+Výsledek se převádí **na znaky jako Kytice a Květ** (styl a velikost znaků podle hlasitosti ze záložky Kytice; ve stylu Body je pták jako dřív).
 Záložka **Pták**: síla máchnutí, světelné stopy, barevný lem, rastr z teček, rychlost videa, velikost ptáka, jas.
 
 ## Scéna Květ
@@ -84,8 +84,7 @@ Záložka **Květ**: nafouknutí dlouhým tónem, náklon v rytmu, otáčení kv
 ## Scéna Kytice
 Kytice se zobrazuje **ve znacích**: obraz se rozdělí na buňky jako terminál a každá buňka dostane znak podle toho, kolik je v ní
 světla, v barvě květiny pod ní. Styly: **ASCII znaky**, **Písmena**, nebo původní **Body** (záložka Kytice → Styl, Velikost znaku).
-Velikost znaků se řídí tempem písničky: pomalá = velké znaky, rychlá = malé (plynule; posuvník Velikost znaku je násobek).
-Na každý kopák znaky prudce vyrostou ze středu obrazu (nájezd) a během doby se zase zmenší, na dropu ještě víc — posuvník Pulz znaků na beat. Na dobu se část znaků krátce zamíchá. Kamera **létá okolo kytice** rychlostí podle tempa (1 oběh za 16 taktů, při rozjezdu a dropu rychleji),
+Velikost znaků se řídí **jen hlasitostí**: čím hlasitější zvuk, tím větší znaky (okamžitě, bez zpoždění; posuvník Velikost znaků podle hlasitosti). Na dobu se část znaků krátce zamíchá. Kamera **létá okolo kytice** rychlostí podle tempa (1 oběh za 16 taktů, při rozjezdu a dropu rychleji),
 výška se vlní po 2 taktech a na každou dobu se nadechne dopředu. Atlas znaků (`media/glyphs.png`) vyrábí `tools/make_glyphs.py`.
 
 Kytice z 327 tisíc svítících bodů: pět růžových lilií, tři chryzantémy, dvě pivoňky, stonky, listy a pyl ve vzduchu.
