@@ -76,11 +76,15 @@ virbl s ní pružně cukne, místo, kde právě raší, se rozsvítí na hi-hate
 Záložka **Květ**: citlivost rozkvětu, velikost květu, jas.
 
 ## Scéna Kytice
-Kytice z 459 tisíc svítících bodů: pět růžových lilií, tři chryzantémy, dvě pivoňky, stonky, listy a pyl ve vzduchu.
+Kytice z 327 tisíc svítících bodů: pět růžových lilií, tři chryzantémy, dvě pivoňky, stonky, listy a pyl ve vzduchu.
 Květiny jsou procedurální, takže opravdu rozkvétají. Kamera se pomalu kývá před kyticí s malou hloubkou ostrosti:
 co je mimo ostrost, rozpije se do měkkých světelných skvrn.
 Pohyb je organický a plynulý jako u Vortexu: vítr kývá květy na stoncích (stonky jsou dole ukotvené a ohýbají se),
 po lístcích běží vlny a mlha proudí polem. Hudba mění rychlost a sílu tohoto proudění, nic neskáče.
+**Rytmus:** kytice „hraje“ písničku. Rytmické hodiny se chytí tempa (BPM z kopáků) a na každý kopák se jemně doladí.
+Lilie se rozevřou a rozzáří na 1. a 3. dobu (vlna přeběhne přes lilie jednu po druhé), chryzantémy na 2. a 4. (virbl),
+pivoňky na osminy (hi-haty); s každým úderem proběhne lístky vlna od středu ke špičkám, kytice se kolébá v taktu
+a kamera se na dobu nadechne. Když kopák zmizí (break), pulz během pár sekund vyprchá a kytice jen pluje, s návratem beatu naskočí.
 **Každá květina poslouchá jiné frekvenční pásmo** (od basů po výšky): podle změn ve svém pásmu se rozvíjí, vlní a září.
 Kopák pošle měkkou vlnu po lístcích a lilie se rozzáří, virbl občas přeostří kameru na jinou květinu (nejvýš jednou za 4 s),
 hutnost a výšky rozpouštějí části květů do mlhy.

@@ -2,6 +2,8 @@
 # proplouvá kyticí s malou hloubkou ostrosti (rozmazané světelné skvrny vpředu i vzadu). Body počítá shader
 # bouquet_sim.glsl, takže květy skutečně rozkvétají. Reakce na hudbu:
 #   energie + každá změna v hudbě → rozkvět (lilie se ohne dozadu, pivoňky se otevřou)
+#   RYTMUS: hodiny svázané s tempem → lilie se otevírají na 1 a 3 (kopák), chryzantémy na 2 a 4 (virbl), pivoňky na osminy;
+#   s každým úderem proběhne vlna lístky, kytice se kolébá v taktu, kamera se na dobu nadechne
 #   každá květina poslouchá své pásmo (rozkvět, vlnění lístků, záře); vítr ohýbá stonky, po lístcích běží vlny
 #   kopák → měkká vlna po lístcích, lilie se rozzáří, kamera se plynule nadechne dopředu
 #   virbl → přeostření kamery na jinou květinu (rack focus)
@@ -60,7 +62,7 @@ def update(A, dt, now):
 	S['surgeT'] = S.get('surgeT', 0.0) * math.exp(-dt / 5.0)
 	surge = lp('surge', S['surgeT'], dt, 2.5, 3.0)
 	# hudební čas: rychlost proudění roste s energií, hutností a rozjezdem, ale fáze se jen plynule sčítá → žádné trhnutí
-	speed = lp('spd', (.3 + eS * 1.0 + bS * .7 + inten * .8 + surge * 1.6) * (tempo if on else 1) + (0 if on else .15), dt, 1.2, .6)
+	speed = lp('spd', (.2 + eS * .5 + bS * .3 + inten * .4 + surge * 1.0) * (tempo if on else 1) + (0 if on else .15), dt, 1.2, .6)
 	S['ph'] += dt * speed
 	# kopák: měkká vlna po lístcích (náběh vyhlazený)
 	if A['kickHit'] and on and S['wave'] > .5:
@@ -90,16 +92,37 @@ def update(A, dt, now):
 	# barvy lilií: odstín se posouvá rychlostí podle intenzity (v klidu skoro stojí), rozptyl mezi liliemi roste s rozjezdem
 	S['hue'] = S.get('hue', 0.0) + dt * (.02 + (inten * .25 + surge * .9 + A['centroid'] * .1) * on * P('Qhue'))
 	spread = lp('hsp', (.15 + inten * .25 + surge * .3) * on * P('Qhue') + .1, dt, 1.0, .4)
+	# ── RYTMICKÉ HODINY: fáze dob běží plynule podle tempa a každý kopák ji jemně doladí (bez skoku) ──
+	bpm = A['bpm'] if (on and A['bpm']) else 100.0
+	bpm = lp('bpmS', bpm, dt, .8)
+	S['bp'] = S.get('bp', 0.0) + dt * bpm / 60.0
+	if A['kickHit'] and on:
+		frac = S['bp'] - math.floor(S['bp'])
+		err = -frac if frac < .5 else 1.0 - frac        # ke kterému úderu je kopák nejblíž
+		S['corr'] = err
+		S['kstr'] = S.get('kstr', 0.0) + (min(1.0, .45 + A['kickHit'] * .7) - S.get('kstr', 0.0)) * .4
+	if A['snareHit'] and on: S['sstr'] = S.get('sstr', 0.0) + (min(1.0, .45 + A['snareHit'] * .7) - S.get('sstr', 0.0)) * .4
+	c_ = S.get('corr', 0.0) * min(1.0, dt * 6.0); S['bp'] += c_; S['corr'] = S.get('corr', 0.0) - c_
+	# síla rytmu: bez kopáků (break, ticho) pulz během ~3 s vyprchá a kytice jen pluje; hi-haty = průměr jejich obálky
+	S['kstr'] = S.get('kstr', 0.0) * math.exp(-dt / 3.0); S['sstr'] = S.get('sstr', 0.0) * math.exp(-dt / 3.0)
+	hstr = lp('hstr', min(1.0, A['hatEnv'] * 1.5) * on, dt, 3.0, .5)
+	kR = min(1.0, S['kstr'] * (.7 + inten * .5 + surge * .4)) * R
+	sR = min(1.0, S['sstr'] * (.7 + inten * .5)) * R
+	if not on: kR, sR, hstr = .25, .15, .1               # bez hudby jemné dýchání ve 100 BPM
+	bar = S['bp'] % 4.0
 	g = q('sim')
 	setv(g, 0, (S['t'], bloom, breathe, flutter))
-	setv(g, 1, (S['wave'], waveA, mist, P('Qbright')))
+	setv(g, 1, (0, P('Qwave'), mist, P('Qbright')))
 	setv(g, 2, (math.sin(S['hue']) * .75, glow,   # odstín se kývá v rozsahu korálová ↔ růžová ↔ fialová (nikdy zelená)
 		 P('Qcolor') * (.85 + inten * .25), spread))
 	setv(g, 3, (S['ph'], wind, und, 0))
 	for i in range(3): setv(g, 4 + i, tuple(out[4 * i:4 * i + 4]))
+	setv(g, 7, (bar, kR, sR, hstr * R))
 	# kamera: pomalé kývání před kyticí podle hudebního času, dopředu se nadechne vyhlazeně
 	S['ang'] += dt * (.05 + (eS * .07 + bS * .05 + inten * .06 + surge * .22) * on) * P('Qcam')
-	push = lp('push', (A['kickEnv'] * .15 * R + eS * .1 + surge * .25) * on * P('Qcam'), dt, 1.5, .6)
+	push = lp('push', (eS * .1 + surge * .25) * on * P('Qcam'), dt, 1.5, .6)
+	bx = S['bp'] % 1.0
+	push += (math.exp(-bx * 3.0) * min(1.0, bx / .07)) * kR * .12 * P('Qcam')   # kamera se na každou dobu nadechne
 	a = math.sin(S['ang']) * .75                       # kamera se kývá ±45° před kyticí (zezadu květy nejsou vidět)
 	rad = 4.5 - push + .35 * math.sin(S['ang'] * .7)
 	cx, cy, cz = math.sin(a) * rad * .8, .7 + .3 * math.sin(S['ang'] * .45), math.cos(a) * rad

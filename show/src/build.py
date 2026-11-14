@@ -164,7 +164,7 @@ F(pg, 'Fbloom', 'Citlivost rozkvětu', 1, 0, 2); F(pg, 'Fsize', 'Velikost květu
 
 pg = page('Kytice')
 F(pg, 'Qbloom', 'Citlivost rozkvětu', 1, 0, 2); F(pg, 'Qmist', 'Rozpad do mlhy', 1, 0, 2); F(pg, 'Qwave', 'Vlna kopáku', 1, 0, 2)
-F(pg, 'Qdof', 'Hloubka ostrosti (rozmazání)', 1, 0, 2); F(pg, 'Qcam', 'Pohyb kamery', 1, 0, 2); F(pg, 'Qsize', 'Velikost bodů (px)', 1.4, .5, 3)
+F(pg, 'Qdof', 'Hloubka ostrosti (rozmazání)', 1, 0, 2); F(pg, 'Qcam', 'Pohyb kamery', 1, 0, 2); F(pg, 'Qsize', 'Velikost bodů (px)', 1.7, .5, 3)
 F(pg, 'Qbright', 'Jas', 1, 0, 3); F(pg, 'Qcolor', 'Sytost barev', 1, 0, 1.5); F(pg, 'Qhue', 'Měnění barev lilií', 1, 0, 2)
 
 pg = page('3D okno')                                   # společné pro Ptáka a Květ: anamorfní výklenek ve zdi
