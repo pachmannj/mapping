@@ -186,7 +186,7 @@ void main() {
 		float t = stemU >= 0. ? stemU : leafT, tb = .6, s_;
 		vec3 path, tang;
 		if (t < tb) { s_ = t / tb; path = mix(mix(Hw, C1, s_), mix(C1, G + vec3(cos(fid * 2.4), 0., sin(fid * 2.4)) * .03, s_), s_); tang = normalize((C1 - Hw) * (1. - s_) + (G - C1) * s_ + 1e-4); }
-		else { s_ = (t - tb) / (1. - tb); path = G + vec3(cos(fid * 2.4), 0., sin(fid * 2.4)) * (.03 + .05 * smoothstep(0., .15, s_)) + vec3(0., -4.5 * s_, 0.);   // svazek stonků vedle sebe tang = vec3(0., -1., 0.); }
+		else { s_ = (t - tb) / (1. - tb); path = G + vec3(cos(fid * 2.4), 0., sin(fid * 2.4)) * (.03 + .05 * smoothstep(0., .15, s_)) + vec3(0., -4.5 * s_, 0.); tang = vec3(0., -1., 0.); }   // svazek stonků vedle sebe
 		if (stemU >= 0.) {
 			vec3 e1 = normalize(cross(tang, vec3(0., 0., 1.)) + 1e-4), e2 = cross(tang, e1);
 			float a = r4 * 6.2832;
