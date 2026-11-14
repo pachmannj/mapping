@@ -99,15 +99,15 @@ def update(A, dt, now):
 	if A['kickHit'] and on:
 		frac = S['bp'] - math.floor(S['bp'])
 		err = -frac if frac < .5 else 1.0 - frac        # ke kterému úderu je kopák nejblíž
-		S['corr'] = err
+		S['corr'] = err * .6                         # doladění jen částečně a pomalu → mávání nikdy necukne
 		S['kstr'] = S.get('kstr', 0.0) + (min(1.0, .45 + A['kickHit'] * .7) - S.get('kstr', 0.0)) * .4
 	if A['snareHit'] and on: S['sstr'] = S.get('sstr', 0.0) + (min(1.0, .45 + A['snareHit'] * .7) - S.get('sstr', 0.0)) * .4
-	c_ = S.get('corr', 0.0) * min(1.0, dt * 6.0); S['bp'] += c_; S['corr'] = S.get('corr', 0.0) - c_
+	c_ = S.get('corr', 0.0) * min(1.0, dt * 1.8); S['bp'] += c_; S['corr'] = S.get('corr', 0.0) - c_
 	# síla rytmu: bez kopáků (break, ticho) pulz během ~3 s vyprchá a kytice jen pluje; hi-haty = průměr jejich obálky
 	S['kstr'] = S.get('kstr', 0.0) * math.exp(-dt / 3.0); S['sstr'] = S.get('sstr', 0.0) * math.exp(-dt / 3.0)
 	hstr = lp('hstr', min(1.0, A['hatEnv'] * 1.5) * on, dt, 3.0, .5)
-	kR = min(1.0, S['kstr'] * (.7 + inten * .5 + surge * .4)) * R
-	sR = min(1.0, S['sstr'] * (.7 + inten * .5)) * R
+	kR = lp('kR', min(1.0, S['kstr'] * (.7 + inten * .5 + surge * .4)) * R, dt, 2.0, 1.0)
+	sR = lp('sR', min(1.0, S['sstr'] * (.7 + inten * .5)) * R, dt, 2.0, 1.0)
 	if not on: kR, sR, hstr = .25, .15, .1               # bez hudby jemné dýchání ve 100 BPM
 	bar = S['bp'] % 4.0
 	g = q('sim')
@@ -140,7 +140,10 @@ def update(A, dt, now):
 	# znaky: styl, velikost buňky (s hutností o kousek menší = jemnější), zamíchání znaků na dobu
 	sty = {'points': 0, 'ascii': 1, 'letters': 2}.get(P('Qstyle'), 1)
 	scr = (math.exp(-bx * 4.0) * min(1.0, bx / .05)) * (kR * .5 + sR * .3) + surge * .3
-	setv(q('ascii'), 0, (P('Qcell') * (1.1 - bS * .2), sty, 2.1, .12 if sty else 0))
+	# velikost znaků podle tempa: pomalá písnička = velké znaky, rychlá = malé (plynule, ať mřížka necuká)
+	tcell = 16.0 - (min(170.0, max(70.0, bpm)) - 70.0) / 100.0 * 10.0 if on else 13.0
+	cell = lp('cell', tcell, dt, .35)
+	setv(q('ascii'), 0, (cell * P('Qcell') / 9.0, sty, 2.1, .12 if sty else 0))
 	setv(q('ascii'), 1, (S['t'], min(.8, scr), P('Qcolor'), 0))
 	r = q('render')
 	setv(q('mat'), 0, (P('Qsize'), r.width, r.height, 0))

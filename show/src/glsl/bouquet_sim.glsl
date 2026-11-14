@@ -32,8 +32,8 @@ vec3 hueRot(vec3 c, float a) {                         // otočení odstínu se 
 	float ca = cos(a), sa = sin(a); float i2 = i * ca - q * sa, q2 = i * sa + q * ca;
 	return max(vec3(y + .956 * i2 + .621 * q2, y - .272 * i2 - .647 * q2, y - 1.106 * i2 + 1.703 * q2), 0.);
 }
-// rytmický puls: x = kolik dob uplynulo od úderu; rychlý náběh (~1/16 doby), doznění podle „decay“
-float beatEnv(float x, float decay) { return smoothstep(0., .07, x) * exp(-x * decay); }
+// mávání: plynulá sinusovka svázaná s tempem (jako křídla ptáka / vlny Krasohledu), vrchol chvilku po úderu
+float flapEnv(float x, float period) { return .5 + .5 * cos(6.2832 * (x - .18 * period) / period); }
 vec3 noise3(vec3 p) {                                  // hladký vektorový šum (součet sinů, levný)
 	return vec3(sin(p.y * 1.7 + p.z * 1.3 + sin(p.x * 2.1)), sin(p.z * 1.9 + p.x * 1.1 + sin(p.y * 1.7)),
 	            sin(p.x * 1.5 + p.y * 2.3 + sin(p.z * 1.3)));
@@ -95,11 +95,12 @@ void main() {
 	// GROOVE: každý druh květiny hraje na jinou dobu taktu → kytice „hraje“ rytmus písničky
 	//   lilie = kopák na 1 a 3 (vlna se přelije přes lilie jedna po druhé), chryzantémy = virbl na 2 a 4, pivoňky = osminy (hi-hat)
 	float bx, env;
-	if (type > 1.5)      { bx = mod(uA4.x - fid * .06, 2.);       env = beatEnv(bx, 2.6) * uA4.y; }
-	else if (type < .5)  { bx = mod(uA4.x - 1. - fid * .04, 2.);  env = beatEnv(bx, 3.2) * uA4.z; }
-	else                 { bx = mod(uA4.x, .5);                    env = beatEnv(bx * 2., 3.5) * (uA4.w * .7 + uA4.y * .3); }
+	// lilie mávají jednou za 2 doby (otevřené na 1 a 3), chryzantémy v protifázi (2 a 4), pivoňky jednou za dobu
+	if (type > 1.5)      { bx = mod(uA4.x - fid * .12, 2.);       env = flapEnv(bx, 2.) * uA4.y; }
+	else if (type < .5)  { bx = mod(uA4.x - 1. - fid * .08, 2.);  env = flapEnv(bx, 2.) * max(uA4.z, uA4.y * .6); }
+	else                 { bx = mod(uA4.x - fid * .1, 1.);         env = flapEnv(bx, 1.) * (uA4.w * .5 + uA4.y * .5); }
 	// rozkvět: společná energie + vlastní pásmo + otevření na svou dobu
-	float open = clamp(uA0.y * .5 + bnd * .45 - .1 + env * .55, .04, 1.);
+	float open = clamp(uA0.y * .45 + bnd * .35 - .15 + env * .75, .04, 1.);
 	// vítr: celý květ se kývá na stonku (plynulé pole, každá květina v jiné fázi), s energií silněji
 	vec3 sway = noise3(vec3(fid * 2.3, ph * .35, fid * .7)) * uA3.y * (.04 + bnd * .04);
 	// houpání v taktu: celá kytice se kolébá tam a zpět jednou za takt (2 doby na každou stranu)
@@ -194,7 +195,7 @@ void main() {
 	float und = sin(waveUV * 5. - uA4.x * 3.1416 + pid * 1.3 + fid) * uA3.z * (.008 + bnd * .02) * waveUV * waveUV;
 	P += Nw * und * k;
 	// vlna na svou dobu: s každým úderem proběhne lístky od středu ke špičkám (za ~2/3 doby)
-	float wv = exp(-pow((waveUV - bx * 1.6) / .2, 2.)) * env * step(.001, waveUV) * uA1.y;
+	float wv = sin(waveUV * 4. - bx * 6.2832 / (type > .5 && type < 1.5 ? 1. : 2.)) * env * step(.001, waveUV) * uA1.y * .5;   // vlna lístky v rytmu mávání
 	P += Nw * wv * .07 * k;
 	// chvění lístků (špičky víc), plynulé
 	if (uA0.w > .02) P += noise3(P * 2.3 + vec3(ph * .6, ph * .45, fid)) * uA0.w * .005 * (.3 + waveUV);
@@ -203,7 +204,7 @@ void main() {
 	if (dis > .002) P += noise3(P * .8 + ph * .3) * dis * .6;   // většina bodů mlhu nepočítá (šetří grafiku)
 	alpha *= (1. - dis * .5);
 	// barvy: lilie blikne na kopák, květy dýchají s pásmem
-	float glow = (.5 + bnd * .8) * (1. + env * 1.4) * (type > 1.5 ? 1. + uA2.y * .5 : 1.);
+	float glow = (.5 + bnd * .8) * (.8 + env * .9) * (type > 1.5 ? 1. + uA2.y * .5 : 1.);
 	col = mix(vec3(dot(col, vec3(.33))), col, uA2.z);
 	oPos = vec4(P, size * (1. + wv * .3));
 	oCol = vec4(col * alpha * 1.7 * glow * uA1.w * (1. + wv * 1.), 1.);
