@@ -78,7 +78,7 @@ Záložka **Květ**: citlivost rozkvětu, velikost květu, jas.
 ## Scéna Kytice
 Kytice se zobrazuje **ve znacích**: obraz se rozdělí na buňky jako terminál a každá buňka dostane znak podle toho, kolik je v ní
 světla, v barvě květiny pod ní. Styly: **ASCII znaky**, **Písmena**, nebo původní **Body** (záložka Kytice → Styl, Velikost znaku).
-Velikost znaků se řídí tempem písničky: pomalá = velké znaky, rychlá = malé (plynule; posuvník Velikost znaku je násobek). Na dobu se část znaků krátce zamíchá. Kamera **létá okolo kytice** rychlostí podle tempa (1 oběh za 8 taktů, při rozjezdu a dropu rychleji),
+Velikost znaků se řídí tempem písničky: pomalá = velké znaky, rychlá = malé (plynule; posuvník Velikost znaku je násobek). Na dobu se část znaků krátce zamíchá. Kamera **létá okolo kytice** rychlostí podle tempa (1 oběh za 16 taktů, při rozjezdu a dropu rychleji),
 výška se vlní po 2 taktech a na každou dobu se nadechne dopředu. Atlas znaků (`media/glyphs.png`) vyrábí `tools/make_glyphs.py`.
 
 Kytice z 327 tisíc svítících bodů: pět růžových lilií, tři chryzantémy, dvě pivoňky, stonky, listy a pyl ve vzduchu.

@@ -62,7 +62,7 @@ def update(A, dt, now):
 	S['surgeT'] = S.get('surgeT', 0.0) * math.exp(-dt / 5.0)
 	surge = lp('surge', S['surgeT'], dt, 2.5, 3.0)
 	# hudební čas: rychlost proudění roste s energií, hutností a rozjezdem, ale fáze se jen plynule sčítá → žádné trhnutí
-	speed = lp('spd', (.2 + eS * .5 + bS * .3 + inten * .4 + surge * 1.0) * (tempo if on else 1) + (0 if on else .15), dt, 1.2, .6)
+	speed = lp('spd', (.15 + eS * .35 + bS * .2 + inten * .25 + surge * .6) * (tempo if on else 1) + (0 if on else .15), dt, 1.2, .6)
 	S['ph'] += dt * speed
 	# kopák: měkká vlna po lístcích (náběh vyhlazený)
 	if A['kickHit'] and on and S['wave'] > .5:
@@ -113,11 +113,15 @@ def update(A, dt, now):
 	# ── RÁNY: každý kopák / virbl vyšle vlnu, která se šíří kytici; každá květina mávne, až k ní dorazí ──
 	#    kopák = velké mávnutí zespodu, virbl = menší shora (střídavě zleva / zprava); pamatují se poslední 4 rány
 	H = S.setdefault('hitq', [])
-	if on and A['kickHit']:
-		H.insert(0, [S['t'], min(1.3, .55 + A['kickHit'] * .9) * R * (1 + surge * .3), 0.0, -1.3])
-	if on and A['snareHit']:
+	#    klidněji: kopák vyšle vlnu nejvýš jednou za 2 doby (silný kopák dřív), virbl jen silný a nejvýš jednou za 4 doby
+	beat_s = 60.0 / max(60.0, bpm)
+	if on and A['kickHit'] and (S['t'] - S.get('lastK', -9) > 1.8 * beat_s or (A['kickHit'] > .95 and S['t'] - S.get('lastK', -9) > .9 * beat_s)):
+		S['lastK'] = S['t']
+		H.insert(0, [S['t'], min(1.3, .6 + A['kickHit'] * .8) * R * (1 + surge * .3), 0.0, -1.3])
+	if on and A['snareHit'] > .55 and S['t'] - S.get('lastS', -9) > 3.6 * beat_s:
+		S['lastS'] = S['t']
 		side = 1.0 if S.get('sside', 1) > 0 else -1.0; S['sside'] = -side
-		H.insert(0, [S['t'], min(.9, .3 + A['snareHit'] * .6) * R, side * 1.2, 1.4])
+		H.insert(0, [S['t'], min(.8, .3 + A['snareHit'] * .5) * R, side * 1.2, 1.4])
 	del H[4:]
 	g = q('sim')
 	setv(g, 0, (S['t'], bloom, breathe, flutter))
@@ -131,15 +135,15 @@ def update(A, dt, now):
 		h = H[i] if i < len(H) else [-99.0, 0.0, 0.0, 0.0]
 		setv(g, 8 + i, (S['t'] - h[0], h[1], h[2], h[3]))
 	# délka mávnutí podle tempa (~1 doba), rychlost šíření vlny kyticí roste s tempem
-	setv(g, 12, (min(.85, max(.35, 1.1 * 60.0 / max(60.0, bpm))), 2.4 * (bpm / 120.0), 0, 0))
+	setv(g, 12, (min(1.8, max(.8, 2.0 * 60.0 / max(60.0, bpm))), 1.3 * (bpm / 120.0), 0, 0))   # mávnutí ~2 doby, vlna pomalu
 	# kamera: LÉTÁ OKOLO KYTICE, rychlost svázaná s tempem (1 oběh za 8 taktů = 32 dob), rozjezd a drop ji zrychlí;
 	# výška se vlní po 2 taktech, vzdálenost dýchá, na každou dobu se kamera nadechne dopředu
 	beat_s = 60.0 / max(60.0, bpm)
-	orbit = lp('orb', (2 * math.pi / (32 * beat_s)) * (.55 + inten * .5 + surge * 1.0) if on else .08, dt, 1.0, .5)
+	orbit = lp('orb', (2 * math.pi / (64 * beat_s)) * (.6 + inten * .4 + surge * .6) if on else .06, dt, .6, .4)   # 1 oběh za 16 taktů
 	S['ang'] += dt * orbit * P('Qcam')
 	push = lp('push', (eS * .15 + surge * .4) * on * P('Qcam'), dt, 1.5, .6)
 	bx = S['bp'] % 1.0
-	push += (math.exp(-bx * 3.0) * min(1.0, bx / .07)) * kR * .15 * P('Qcam')   # kamera se na každou dobu nadechne
+	push += (math.exp(-bx * 2.0) * min(1.0, bx / .15)) * kR * .05 * P('Qcam')   # kamera se na každou dobu nadechne
 	a = S['ang']
 	rad = 4.7 - push + .5 * math.sin(S['bp'] * math.pi / 16)                    # přiblížení a oddálení po 8 dobách
 	cx, cy, cz = math.sin(a) * rad, .7 + .6 * math.sin(S['bp'] * math.pi / 8), math.cos(a) * rad
@@ -153,7 +157,7 @@ def update(A, dt, now):
 	S['focus'] += (fd - S['focus']) * (1 - math.exp(-dt * 1.2))
 	# znaky: styl, velikost buňky (s hutností o kousek menší = jemnější), zamíchání znaků na dobu
 	sty = {'points': 0, 'ascii': 1, 'letters': 2}.get(P('Qstyle'), 1)
-	scr = (math.exp(-bx * 4.0) * min(1.0, bx / .05)) * (kR * .5 + sR * .3) + surge * .3
+	scr = (math.exp(-bx * 4.0) * min(1.0, bx / .05)) * (kR * .2 + sR * .1) + surge * .15
 	# velikost znaků podle tempa: pomalá písnička = velké znaky, rychlá = malé (plynule, ať mřížka necuká)
 	tcell = 16.0 - (min(170.0, max(70.0, bpm)) - 70.0) / 100.0 * 10.0 if on else 13.0
 	cell = lp('cell', tcell, dt, .35)
