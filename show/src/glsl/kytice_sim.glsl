@@ -205,9 +205,7 @@ void main() {
 	// chvění lístků (špičky víc), plynulé
 	P += noise3(P * 2.3 + vec3(ph * .6, ph * .45, fid)) * uA0.w * .01 * (.3 + waveUV);
 	// rozpad do mlhy: jen část bodů (r4^3) odplyne s proudem pole, s hudbou se vrátí
-	float dis = uA1.z * pow(r4, 3.) * (.4 + waveUV);
-	P += noise3(P * .8 + ph * .3) * dis * .6;
-	alpha *= (1. - dis * .5);
+	// (rozpad lístků do mlhy je vypnutý — od lístků se táhly houpající prameny světla; lístky zůstávají čisté)
 	// barvy: lilie blikne na kopák, květy dýchají s pásmem
 	float glow = (.55 + bnd * 1.1) * (type > 1.5 ? 1. + uA2.y * .8 : 1.);
 	col = mix(vec3(dot(col, vec3(.33))), col, uA2.z);
