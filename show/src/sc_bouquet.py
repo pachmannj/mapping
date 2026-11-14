@@ -44,7 +44,17 @@ def lp(key, x, dt, up=3.0, down=None):
 
 FOCUS = [(x * 1.55, y * 1.15, z * 1.15) for x, y, z in ((.15, .55, .2), (-.78, .42, -.2), (.88, .22, .2), (-.05, -.42, .62), (-.5, -.1, .3), (.72, -.42, -.15))]
 
-def update(A, dt, now):
+def update(A, dt, now): run(A, dt, now, '/project1/show/bouquet', S)
+
+def run(A, dt, now, path, state, solo=None):
+	"""společné ovládání pro Kytici i Květ (sc_flower.py volá run se svou sítí, stavem a funkcí solo, která vybírá druh květu)"""
+	global S, Qc
+	keep = (S, Qc)
+	S, Qc = state, path
+	try: _update(A, dt, now, solo)
+	finally: S, Qc = keep
+
+def _update(A, dt, now, solo):
 	if 'bloom' not in S:
 		S.update(dict(t=0.0, ph=0.0, bloom=.4, wave=9.0, waveA=0.0, kick=0.0, ang=0.0, fi=0, focus=3.4, lastFocus=0.0,
 			lobS=[.4] * 12, lobL=[.4] * 12, lobO=[.4] * 12))
@@ -136,6 +146,12 @@ def update(A, dt, now):
 		setv(g, 8 + i, (S['t'] - h[0], h[1], h[2], h[3]))
 	# délka mávnutí podle tempa (~1 doba), rychlost šíření vlny kyticí roste s tempem
 	setv(g, 12, (min(1.8, max(.8, 2.0 * 60.0 / max(60.0, bpm))), 1.3 * (bpm / 120.0), 0, 0))   # mávnutí ~2 doby, vlna pomalu
+	# KVĚT (jedna květina): druh A → B, morf, otočení, velikost — vybírá sc_flower.py podle beatu a písničky
+	if solo:
+		ta, tb, m, spin, size = solo(S, A, dt, now, dict(on=on, bp=S['bp'], bpm=bpm, inten=inten, surge=surge, kR=kR))
+		setv(g, 13, (1, ta, tb, m)); setv(g, 14, (spin, size, 0, 0))
+	else:
+		setv(g, 13, (0, 0, 0, 0)); setv(g, 14, (0, 1, 0, 0))
 	# kamera: LÉTÁ OKOLO KYTICE, rychlost svázaná s tempem (1 oběh za 8 taktů = 32 dob), rozjezd a drop ji zrychlí;
 	# výška se vlní po 2 taktech, vzdálenost dýchá, na každou dobu se kamera nadechne dopředu
 	beat_s = 60.0 / max(60.0, bpm)
@@ -145,14 +161,14 @@ def update(A, dt, now):
 	bx = S['bp'] % 1.0
 	push += (math.exp(-bx * 2.0) * min(1.0, bx / .15)) * kR * .05 * P('Qcam')   # kamera se na každou dobu nadechne
 	a = S['ang']
-	rad = 4.7 - push + .5 * math.sin(S['bp'] * math.pi / 16)                    # přiblížení a oddálení po 8 dobách
-	cx, cy, cz = math.sin(a) * rad, .7 + .6 * math.sin(S['bp'] * math.pi / 8), math.cos(a) * rad
+	rad = (4.0 if solo else 4.7) - push + .5 * math.sin(S['bp'] * math.pi / 16)  # přiblížení a oddálení po 8 dobách
+	cx, cy, cz = math.sin(a) * rad, (.25 if solo else .7) + .6 * math.sin(S['bp'] * math.pi / 8), math.cos(a) * rad
 	c = q('cam')
 	c.par.tx, c.par.ty, c.par.tz = cx, cy, cz          # natočení řeší Look At na null „target“
 	# ostření: na virbl přeostří na jinou květinu, nejvýš jednou za 4 s, plynule
 	if A['snareHit'] and on and now - S['lastFocus'] > 4:
 		S['fi'] = random.choice([i for i in range(len(FOCUS)) if i != S['fi']]); S['lastFocus'] = now
-	fx, fy, fz = FOCUS[S['fi']]
+	fx, fy, fz = (0.0, 0.0, 0.0) if solo else FOCUS[S['fi']]
 	fd = math.sqrt((fx - cx) ** 2 + (fy - cy) ** 2 + (fz - cz) ** 2)
 	S['focus'] += (fd - S['focus']) * (1 - math.exp(-dt * 1.2))
 	# znaky: styl, velikost buňky (s hutností o kousek menší = jemnější), zamíchání znaků na dobu

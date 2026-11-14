@@ -70,10 +70,12 @@ Kopák = máchnutí křídly, záblesk obrysu a postrčení z okna; virbl a hi-h
 Záložka **Pták**: síla máchnutí, světelné stopy, barevný lem, rastr z teček, rychlost videa, velikost ptáka, jas.
 
 ## Scéna Květ
-Skutečná lilie z časosběru (64 fází rozkvětu načtených po startu do paměti grafiky, asi 4 s) stojí ve 3D okně:
-rozkvět řídí energie hudby a každá její změna (ne jen hlasitost), kopák lilii „nadechne“, vystrčí k divákovi, zvětší a rozsvítí i zeď,
-virbl s ní pružně cukne, místo, kde právě raší, se rozsvítí na hi-hatech. S hudbou se přibližuje k divákovi a stín na zdi se vzdaluje.
-Záložka **Květ**: citlivost rozkvětu, velikost květu, jas.
+Jedna velká květina ze svítících bodů ve **stejném nastavení jako Kytice** (znaky / písmena / body, rytmus, rány, mávání,
+kamera létá okolo; posuvníky v záložce Kytice platí i tady). Podle beatu a písničky se květina pořád dokola **proměňuje
+v další druhy**: lilie → chryzantéma → růže → tulipán → pivoňka → kopretina … Body přeletí obloukem z lístků jednoho druhu
+do lístků druhého. Čím víc se písnička rozjede, tím častěji se druh mění (v klidu po 8 dobách, rozjetá písnička po 4 až 2 dobách),
+drop přepne hned. Květ se přitom otáčí kolem své osy, s tempem a rozjezdem rychleji.
+Záložka **Květ**: rychlost přepínání druhů, otáčení květu.
 
 ## Scéna Kytice
 Kytice se zobrazuje **ve znacích**: obraz se rozdělí na buňky jako terminál a každá buňka dostane znak podle toho, kolik je v ní

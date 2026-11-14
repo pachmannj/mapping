@@ -189,29 +189,18 @@ def window3d(parent, obj, x, y):
 	return w
 
 def build_flower(SH):
-	Fc = mk(SH, baseCOMP, 'flower', -1100, -750)
-	src = mk(Fc, moviefileinTOP, 'frame_src', -800, 0); src.par.file = 'media/lily/f_01.jpg'
-	ph = mk(Fc, texture3dTOP, 'phases', -600, 0, (src,))                # 64 fází rozkvětu; plní je sc_flower.preload()
-	for n_, v_ in (('cachesize', 64), ('active', False), ('replacesingle', True)): setp(ph, n_, v_)
-	arr = glsl(Fc, 'arrival', 'lily_arrival.glsl', -400, -300, [], (ph,))   # mapa času příchodu (okraj růstu svítí na hi-hatech)
-	custom_res(arr, 720, 720)
-	ab = mk(Fc, blurTOP, 'arrival_blur', -200, -300, (arr,)); setp(ab, 'size', 6)
-	lily = glsl(Fc, 'lily', 'lily.glsl', 0, 0, ['uB0', 'uB1', 'uB2', 'uB3', 'uL0', 'uL1', 'uL2'], (ab, ph))
-	custom_res(lily, 720, 720)
-	for n_, v_ in (('vec0valuex', .3), ('vec1valuex', .5), ('vec1valuey', .5), ('vec1valuez', .32), ('vec1valuew', 12),
-	               ('vec3valuex', 1), ('vec3valuey', 1), ('vec3valuez', 1), ('vec3valuew', 1)): setp(lily, n_, v_)   # bezpečné výchozí hodnoty
-	win = window3d(Fc, lily, 300, 0)
-	glow = bloom(Fc, win, 800, 0, "0.45")
-	mk(Fc, nullTOP, 'out1', 1400, 0, (glow,))
+	"""KVĚT: jedna květina, která se podle beatu proměňuje v další druhy — stejná síť jako Kytice (sc_flower.py → sc_bouquet.run)"""
+	build_bouquet(SH, 'flower', -1100, -750, ty=.1)
 
 # ───────────────────────── KYTICE (květiny z bodů) ─────────────────────────
-def build_bouquet(SH):
-	Q = mk(SH, baseCOMP, 'bouquet', -1100, -900)
+def build_bouquet(SH, name='bouquet', x=-1100, y=-900, ty=.75):
+	Q = mk(SH, baseCOMP, name, x, y)
 	PW, PH = 1024, 320                                                  # 327 tisíc bodů (víc přetěžovalo grafiku MacBooku Air → trhání)
-	sim = glsl(Q, 'sim', 'bouquet_sim.glsl', -400, 0, ['uA0', 'uA1', 'uA2', 'uA3', 'uL0', 'uL1', 'uL2', 'uA4', 'uH0', 'uH1', 'uH2', 'uH3', 'uH4'], fmt='rgba16float')   # 16 bitů stačí, polovina přenosu
+	sim = glsl(Q, 'sim', 'bouquet_sim.glsl', -400, 0, ['uA0', 'uA1', 'uA2', 'uA3', 'uL0', 'uL1', 'uL2', 'uA4', 'uH0', 'uH1', 'uH2', 'uH3', 'uH4', 'uM0', 'uM1'], fmt='rgba16float')   # 16 bitů stačí, polovina přenosu
 	custom_res(sim, PW, PH); setp(sim, 'numcolorbufs', 2)
 	for n_, v_ in (('vec0valuey', .6), ('vec1valuex', 9), ('vec1valuew', 1), ('vec2valuez', 1), ('vec12valuex', .5), ('vec12valuey', 2)): setp(sim, n_, v_)
 	for i_ in range(8, 12): setp(sim, 'vec%dvaluex' % i_, 99)        # bez ran: stáří 99 s
+	setp(sim, 'vec14valuey', 1)                                           # velikost květu (režim jedné květiny)
 	col = mk(Q, renderselectTOP, 'col', -200, -100); col.par.top = sim; setp(col, 'bufferindex', 1); setp(col, 'format', 'rgba16float')
 	vd = textfile(Q, 'mat_vert', GL + '/bouquet_vert.glsl', -200, -300)
 	pd = textfile(Q, 'mat_pixel', GL + '/bouquet_pixel.glsl', -200, -420)
@@ -223,7 +212,7 @@ def build_bouquet(SH):
 	setp(m, 'sampler1name', 'sCol'); m.par.sampler1top = col
 	additive(m)
 	instgeo(Q, 'geo', m, PW * PH, 200, -300)
-	tgt = mk(Q, nullCOMP, 'target', 0, -600); tgt.par.ty = .75
+	tgt = mk(Q, nullCOMP, 'target', 0, -600); tgt.par.ty = ty
 	cam = mk(Q, cameraCOMP, 'cam', 200, -450); setp(cam, 'viewanglemethod', 'vertfov'); setp(cam, 'fov', 42); cam.par.tz = 3.6; setp(cam, 'near', .05); setp(cam, 'far', 50)
 	setp(cam, 'lookat', tgt.path)
 	rend = mk(Q, renderTOP, 'render', 400, -300)

@@ -159,8 +159,8 @@ F(pg, 'Bflap', 'Síla máchnutí', 1, 0, 2); F(pg, 'Btrails', 'Světelné stopy'
 F(pg, 'Bfringe', 'Barevný lem', 1, 0, 2); F(pg, 'Bhalftone', 'Rastr z teček (podle hudby)', 1, 0, 2)
 F(pg, 'Bspeed', 'Rychlost videa', 1, 0, 3); F(pg, 'Bsize', 'Velikost ptáka', 1, .4, 2); F(pg, 'Bbright', 'Jas', 1.2, 0, 3)
 
-pg = page('Květ')
-F(pg, 'Fbloom', 'Citlivost rozkvětu', 1, 0, 2); F(pg, 'Fsize', 'Velikost květu', 1, .4, 2); F(pg, 'Fbright', 'Jas', 1.1, 0, 3)
+pg = page('Květ')                                      # jedna květina; vzhled a reakce bere ze záložky Kytice
+F(pg, 'Fswitch', 'Rychlost přepínání druhů', 1, .25, 4); F(pg, 'Fspin', 'Otáčení květu', 1, 0, 3)
 
 pg = page('Kytice')
 M(pg, 'Qstyle', 'Styl', ['ascii', 'letters', 'points'], ['ASCII znaky', 'Písmena', 'Body'], 'ascii'); F(pg, 'Qcell', 'Velikost znaku (px)', 9, 4, 24); F(pg, 'Qcellbeat', 'Pulz znaků na beat', 1, 0, 3)
