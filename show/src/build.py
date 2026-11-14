@@ -163,12 +163,12 @@ pg = page('Květ')                                      # jedna květina; vzhled
 F(pg, 'Fswitch', 'Rychlost přepínání druhů', 1, .25, 4); F(pg, 'Fspin', 'Otáčení květu', 1, 0, 3)
 F(pg, 'Finflate', 'Nafouknutí dlouhým tónem', 1, 0, 2); F(pg, 'Flean', 'Náklon v rytmu', 0, 0, 2)
 
-pg = page('Kytice')
-M(pg, 'Qstyle', 'Styl', ['ascii', 'letters', 'points'], ['ASCII znaky', 'Písmena', 'Body'], 'ascii'); F(pg, 'Qcell', 'Velikost znaku (px)', 9, 4, 24); F(pg, 'Qcellbeat', 'Velikost znaků podle hlasitosti', 1, 0, 3)
-F(pg, 'Qsway', 'Limit kývání', 1, 0, 3); F(pg, 'Qbloom', 'Citlivost rozkvětu', 1, 0, 2); F(pg, 'Qmist', 'Rozpad do mlhy', 1, 0, 2); F(pg, 'Qwave', 'Vlna kopáku', 1, 0, 2)
+pg = page('Kytice')                                    # výchozí hodnoty = nastavení odladěné na projekci (14. 11.)
+M(pg, 'Qstyle', 'Styl', ['ascii', 'letters', 'points'], ['ASCII znaky', 'Písmena', 'Body'], 'ascii'); F(pg, 'Qcell', 'Velikost znaku (px)', 4.38, 4, 24); F(pg, 'Qcellbeat', 'Velikost znaků podle hlasitosti', 1.565, 0, 3)
+F(pg, 'Qsway', 'Limit kývání', 3, 0, 3); F(pg, 'Qbloom', 'Citlivost rozkvětu', 1, 0, 2); F(pg, 'Qmist', 'Rozpad do mlhy', .462, 0, 2); F(pg, 'Qwave', 'Vlna kopáku', 1, 0, 2)
 F(pg, 'Qdof', 'Hloubka ostrosti (rozmazání)', 1, 0, 2); F(pg, 'Qcam', 'Let kamery okolo (rychlost)', 1, 0, 3)
-F(pg, 'Qinflate', 'Nafouknutí dlouhým tónem', 1, 0, 2); F(pg, 'Qlean', 'Náklon v rytmu', 0, 0, 2); F(pg, 'Qspin', 'Otáčení kytice', 1, 0, 3); F(pg, 'Qsize', 'Velikost bodů (px)', 1.7, .5, 3)
-F(pg, 'Qbright', 'Jas', 1, 0, 3); F(pg, 'Qcolor', 'Sytost barev', 1, 0, 1.5); F(pg, 'Qhue', 'Měnění barev lilií', 1, 0, 2)
+F(pg, 'Qinflate', 'Nafouknutí dlouhým tónem', 1, 0, 2); F(pg, 'Qlean', 'Náklon v rytmu', 0, 0, 2); F(pg, 'Qspin', 'Otáčení kytice', 1, 0, 3); F(pg, 'Qsize', 'Velikost bodů (px)', 1.12, .5, 3)
+F(pg, 'Qbright', 'Jas', 1, 0, 3); F(pg, 'Qcolor', 'Sytost barev', 1, 0, 1.5); F(pg, 'Qhue', 'Měnění barev lilií', 1.948, 0, 2)
 
 pg = page('3D okno')                                   # společné pro Ptáka a Květ: anamorfní výklenek ve zdi
 T(pg, 'Wbox', 'Výklenek (krychle s mřížkou)', False); F(pg, 'Wwall', 'Světlo na zdi (bez výklenku)', .35, 0, 1.5)
