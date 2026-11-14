@@ -4,6 +4,7 @@
 #   kopák   → máchnutí křídly + bílý záblesk obrysu, postrčí ptáka dopředu z okna
 #   energie / hutnost → jak daleko z okna vylétá, délka stop
 #   virbl a hi-haty → rastr z teček (halftone) a barevný lem
+# Výsledek se převede na znaky jako Kytice a Květ (styl, velikost podle tempa a pulz na beat ze záložky Kytice).
 import math, random
 import numpy as np
 
@@ -112,6 +113,25 @@ def update(A, dt, now):
 	setv(k('reel'), 0, (dx, dy, min(.97, .8 + tr * .15 + B * .03), tr * (1.0 + A['kickEnv'] * .8 * on)))
 	setv(k('reel'), 1, (5 + 6 * S['fr'], P('Bfringe') * (.5 + S['fr']), min(1.0, P('Bhalftone') * (S['half'] + B * .35 * on)), 6))
 	setv(k('reel'), 2, (P('Bbright') * .8, P('Bbright'), math.sin(S['hue'] * 6.28) * .06, A['kickEnv'] * .8 * on))
-	window(k('window'), A, on, (tx, ty, S['z'], hh, asp), A['kickEnv'] * on, .5 + S['hue'])
+	chars = P('Qstyle') != 'points'
+	w = k('window')
+	window(w, A, on, (tx, ty, S['z'], hh, asp), A['kickEnv'] * on, .5 + S['hue'], 0.0 if chars else 1.0)
+	if chars: w.par.vec5valuey = 0                     # ve znacích bez světla na zdi (jinak by znaky zaplnily celý obraz)
+	ascii_pass(A, dt, on, R)
+
+def ascii_pass(A, dt, on, R):
+	"""znaky jako v Kytici: velikost podle tempa (pomalá = velké), kopák je prudce zvětší (nájezd ze středu), na kopák se zamíchají"""
+	def lp(key, x, rate):
+		v = S.setdefault(key, x); S[key] = v + (x - v) * (1 - math.exp(-dt * rate)); return S[key]
+	bpm = A['bpm'] if (on and A['bpm']) else 100.0
+	cell = lp('aCell', 16.0 - (min(170.0, max(70.0, bpm)) - 70.0) / 10.0 if on else 13.0, .35)
+	if on and A['kickHit']: S['aPulse'] = max(S.get('aPulse', 0.0), min(1.0, .5 + A['kickHit'] * .6))
+	S['aPulse'] = S.get('aPulse', 0.0) * math.exp(-dt * 4.5)
+	cp = lp('aCp', S['aPulse'], 30.0)
+	cell *= 1 + cp * 1.4 * P('Qcellbeat')
+	sty = {'points': 0, 'ascii': 1, 'letters': 2}.get(P('Qstyle'), 1)
+	scr = cp * .25 * R
+	setv(k('ascii'), 0, (cell * P('Qcell') / 9.0, sty, 2.1, 0))
+	setv(k('ascii'), 1, (S['t'], min(.8, scr), P('Qcolor'), 0))
 
 def look_name(): return 'okno'

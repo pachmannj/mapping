@@ -175,7 +175,11 @@ def build_bird(SH):
 	             ('vec1valuew', 6), ('vec2valuex', 1), ('vec2valuey', 1)): setp(reel, n, v)
 	col = mk(Bc, renderselectTOP, 'reel_col', 500, 0); col.par.top = reel; setp(col, 'bufferindex', 1); setp(col, 'format', 'rgba16float')
 	win = window3d(Bc, col, 700, 0)
-	glow = bloom(Bc, win, 1200, 0, "0.5")
+	# znaky jako v Kytici a Květu (styl, velikost podle tempa a pulz na beat ze záložky Kytice)
+	gl = mk(Bc, moviefileinTOP, 'glyphs', 900, -200); gl.par.file = 'media/glyphs.png'
+	asc = glsl(Bc, 'ascii', 'bouquet_ascii.glsl', 1000, 0, ['uS0', 'uS1'], (win, gl))
+	for n_, v_ in (('vec0valuex', 9), ('vec0valuey', 1), ('vec0valuez', 1.6), ('vec1valuez', 1)): setp(asc, n_, v_)
+	glow = bloom(Bc, asc, 1200, 0, "0.5")
 	mk(Bc, nullTOP, 'out1', 1800, 0, (glow,))
 
 # ───────────────────────── KVĚT (skutečná lilie) ─────────────────────────

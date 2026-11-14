@@ -67,6 +67,7 @@ který se s hloubkou vzdaluje a měkne. Zapíná se přepínačem `Výklenek`.
 Racek ze stock videa vyříznutý z oblohy krouží ve 3D okně a s energií hudby z něj vylétá před zeď.
 Styl ze čtyř vrstev: šedé tělo s bílým obrysem, tyrkysové světelné stopy za pohybem, červeno-oranžový barevný lem a rastr z teček.
 Kopák = máchnutí křídly, záblesk obrysu a postrčení z okna; virbl a hi-haty = rastr z teček a lem.
+Výsledek se převádí **na znaky jako Kytice a Květ** (styl, velikost podle tempa a pulz na beat ze záložky Kytice; ve stylu Body je pták jako dřív).
 Záložka **Pták**: síla máchnutí, světelné stopy, barevný lem, rastr z teček, rychlost videa, velikost ptáka, jas.
 
 ## Scéna Květ
