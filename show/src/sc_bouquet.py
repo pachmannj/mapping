@@ -182,7 +182,7 @@ def _update(A, dt, now, solo):
 	S['cpT'] = S.get('cpT', 0.0) * math.exp(-dt * 4.5)
 	cp = lp('cp', S['cpT'], dt, 30.0, 30.0)
 	cell *= 1 + cp * 1.4 * P('Qcellbeat')
-	setv(q('ascii'), 0, (cell * P('Qcell') / 9.0, sty, 2.1, .12 if sty else 0))
+	setv(q('ascii'), 0, (cell * P('Qcell') / 9.0, sty, 2.1, 0))   # pod znaky už nejsou vidět původní body
 	setv(q('ascii'), 1, (S['t'], min(.8, scr), P('Qcolor'), 0))
 	r = q('render')
 	setv(q('mat'), 0, (P('Qsize'), r.width, r.height, 0))
