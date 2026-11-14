@@ -13,7 +13,7 @@ uniform vec4 uA2;   // posun odstínu lilií (rad), záře lilií, sytost, rozpt
 uniform vec4 uA3;   // fáze proudění (hudební čas), síla větru, vlnění lístků, -
 uniform vec4 uL0; uniform vec4 uL1; uniform vec4 uL2;   // 12 frekvenčních pásem (vyhlazená v sc_bouquet.py)
 uniform vec4 uH0; uniform vec4 uH1; uniform vec4 uH2; uniform vec4 uH3;   // RÁNY: stáří (s), síla, odkud x, y
-uniform vec4 uH4;   // délka mávnutí (s), rychlost šíření vlny (jednotek/s), -, -
+uniform vec4 uH4;   // délka mávnutí (s), rychlost šíření vlny (jednotek/s), počet dob (Květ: blikání lilií vzadu), -
 uniform vec4 uM0;   // KVĚT: jedna květina (0/1), druh A, druh B, morf A → B (0–1)
 uniform vec4 uM1;   // KVĚT: otočení květu kolem osy (rad), velikost, nafouknutí dlouhým tónem (0–1), náklon v rytmu (rad)
 uniform vec4 uA4;   // RYTMUS: poloha v taktu (0–4 doby, plynule podle tempa), síla kopáku, síla virblu, síla hi-hatů
@@ -295,6 +295,12 @@ void main() {
 	alpha *= (1. - dis * .5);
 	// barvy: lilie blikne na kopák, květy dýchají s pásmem
 	float glow = (.5 + bnd * .8) * (.8 + env * .9) * (solo || (type > 1.5 && type < 2.5) ? 1. + uA2.y * .5 : 1.);
+	if (solo && id > 10.5) {                             // lilie vzadu blikají na doby jedna po druhé, střídavě vlevo / vpravo (jako světla decku)
+		float beat = uH4.z, st = mod(floor(beat), 6.), fr_ = fract(beat);
+		float lit = mod(st, 2.) < .5 ? st * .5 : 3. + (st - 1.) * .5;
+		float on_ = abs(id - 11. - lit) < .5 ? smoothstep(0., .06, fr_) * exp(-fr_ * 2.2) : 0.;
+		glow *= .42 + on_ * (1.4 + uA4.y * 2.8);
+	}
 	col = mix(vec3(dot(col, vec3(.33))), col, uA2.z);
 	if (!solo) {                                         // Kytice: rozjezd a dlouhý tón ji zvětší, pomalu se otáčí kolem svislé osy
 		P *= uM1.y;
