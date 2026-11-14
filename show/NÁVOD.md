@@ -83,33 +83,13 @@ Záložka **Květ**: nafouknutí dlouhým tónem, náklon v rytmu, otáčení kv
 `src/sc_flower.py` do ORDER přidají další druhy).
 
 ## Scéna Kytice
-**Plave jako Vortex (stejně jako Květ):** měkká dlouhá mávnutí na rány, znaky se nemíchají, kamera se na doby necuká.
-Dlouhý tón / zpěv kytici rozvine, mírně nafoukne a zhustí kolem ní atmosféru (pak se stáhne); když se písnička rozjede,
-otáčí se rychleji a o kus zvětší. **Tempo**: květy mávnou na každou dobu (mávnutí trvá jednu dobu) a kytice na kopák pumpuje;
-bez houpání (kamera nekolébá výškou ani vzdáleností, náklon v rytmu je ve výchozím stavu vypnutý).
-Posuvníky v záložce Kytice: Nafouknutí dlouhým tónem, Náklon v rytmu, Otáčení kytice.
-
-Kytice se zobrazuje **ve znacích**: obraz se rozdělí na buňky jako terminál a každá buňka dostane znak podle toho, kolik je v ní
-světla, v barvě květiny pod ní. Styly: **ASCII znaky**, **Písmena**, nebo původní **Body** (záložka Kytice → Styl, Velikost znaku).
-Velikost znaků se řídí **jen hlasitostí**: čím hlasitější zvuk, tím větší znaky (okamžitě, bez zpoždění; posuvník Velikost znaků podle hlasitosti). Na dobu se část znaků krátce zamíchá. Kamera **létá okolo kytice** rychlostí podle tempa (1 oběh za 16 taktů, při rozjezdu a dropu rychleji),
-výška se vlní po 2 taktech a na každou dobu se nadechne dopředu. Atlas znaků (`media/glyphs.png`) vyrábí `tools/make_glyphs.py`.
-
-Kytice z 327 tisíc svítících bodů: pět růžových lilií, tři chryzantémy, dvě pivoňky, stonky, listy a pyl ve vzduchu.
-Květiny jsou procedurální, takže opravdu rozkvétají. Kamera se pomalu kývá před kyticí s malou hloubkou ostrosti:
-co je mimo ostrost, rozpije se do měkkých světelných skvrn.
-Pohyb je organický a plynulý jako u Vortexu: vítr kývá květy na stoncích (stonky jsou dole ukotvené a ohýbají se),
-po lístcích běží vlny a mlha proudí polem. Hudba mění rychlost a sílu tohoto proudění, nic neskáče.
-**Rytmus:** kytice „hraje“ písničku. Rytmické hodiny se chytí tempa (BPM z kopáků) a na každý kopák se jemně doladí.
-Lilie se rozevřou a rozzáří na 1. a 3. dobu (vlna přeběhne přes lilie jednu po druhé), chryzantémy na 2. a 4. (virbl),
-pivoňky na osminy (hi-haty); s každým úderem proběhne lístky vlna od středu ke špičkám, kytice se kolébá v taktu
-a kamera se na dobu nadechne. Když kopák zmizí (break), pulz během pár sekund vyprchá a kytice jen pluje, s návratem beatu naskočí.
-**Každá květina poslouchá jiné frekvenční pásmo** (od basů po výšky): podle změn ve svém pásmu se rozvíjí, vlní a září.
-Kopák pošle měkkou vlnu po lístcích a lilie se rozzáří, virbl občas přeostří kameru na jinou květinu (nejvýš jednou za 4 s),
-hutnost a výšky rozpouštějí části květů do mlhy.
-Růžové lilie mění barvy podle hudby (korálová ↔ růžová ↔ fialová, každá lilie podle svého pásma jinak).
-Když se písnička rozjede, kytice se postupně víc rozpohybuje, rozvine a rozzáří; na dropu přijde vlna, která všechno
-rozvlní, rozbarví a rozpustí do mlhy a pomalu dozní.
-Záložka **Kytice**: citlivost rozkvětu, rozpad do mlhy, vlna kopáku, hloubka ostrosti, pohyb kamery, velikost bodů, jas, sytost barev, měnění barev lilií.
+(Vrácená verze bez znaků a bez rytmických hodin.) Kytice ze svítících bodů: pět růžových lilií, tři chryzantémy, dvě pivoňky,
+stonky, listy a pyl ve vzduchu. Kamera se pomalu kývá před kyticí s malou hloubkou ostrosti (rozmazané světelné skvrny).
+Pohyb je organický a plynulý: vítr kývá květy na stoncích, po lístcích běží vlny, mlha proudí polem; květy se nezavírají.
+Kopák pošle po lístcích vlnu světla od středu ke špičkám a lilie se rozzáří, každá květina poslouchá své frekvenční pásmo,
+lilie mění barvy podle hudby (korálová ↔ růžová ↔ fialová), rozjezd písničky kytici rozpohybuje a drop ji rozvlní a rozpustí do mlhy.
+Záložka **Kytice**: citlivost rozkvětu, rozpad do mlhy, vlna kopáku, hloubka ostrosti, pohyb kamery, velikost bodů, jas,
+sytost barev, měnění barev lilií. (Ostatní posuvníky v záložce — styl znaků, velikost znaků… — platí pro Květ a Ptáka.)
 
 ## Pro úpravy
 - Zdrojáky jsou ve `src/` (Python + GLSL), TouchDesigner je čte ze souborů a změny se projeví hned.

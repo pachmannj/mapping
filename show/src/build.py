@@ -268,7 +268,7 @@ expr(cam, 'device', "parent().par.Cameradevice")
 # ─────────────── scény (src/build_scenes.py) ───────────────
 exec(open(SRC + '/build_scenes.py', encoding='utf-8').read())
 SKIP = globals().get('SKIP_SCENES', ())                         # ladění: scény, které se mají vynechat
-for nm, fn in (('krasohled', build_krasohled), ('vortex', build_vortex), ('echoes', build_echoes), ('heat', build_heat), ('bird', build_bird), ('flower', build_flower), ('bouquet', build_bouquet)):
+for nm, fn in (('krasohled', build_krasohled), ('vortex', build_vortex), ('echoes', build_echoes), ('heat', build_heat), ('bird', build_bird), ('flower', build_flower), ('bouquet', build_kytice)):
 	if nm in SKIP:
 		X = mk(SH, baseCOMP, nm, -1100, 0); mk(X, constantTOP, 'out1', 0, 0)
 	else: fn(SH)

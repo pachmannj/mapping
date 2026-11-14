@@ -236,3 +236,36 @@ def build_bouquet(SH, name='bouquet', x=-1100, y=-900, ty=.75):
 	for n_, v_ in (('vec0valuex', 9), ('vec0valuey', 1), ('vec0valuez', 1.6), ('vec1valuez', 1)): setp(asc, n_, v_)
 	glow = bloom(Q, asc, 1200, -300, "0.7")
 	mk(Q, nullTOP, 'out1', 1800, -300, (glow,))
+
+# ───────────────────────── KYTICE (vrácená verze: bez znaků, květy se vlní jako ve větru, vlna světla na kopák) ─────────────────────────
+def build_kytice(SH):
+	Q = mk(SH, baseCOMP, 'bouquet', -1100, -900)
+	PW, PH = 1024, 384                                                  # 393 tisíc bodů (víc přetěžovalo grafiku MacBooku Air → trhání)
+	sim = glsl(Q, 'sim', 'kytice_sim.glsl', -400, 0, ['uA0', 'uA1', 'uA2', 'uA3', 'uL0', 'uL1', 'uL2'], fmt='rgba16float')
+	custom_res(sim, PW, PH); setp(sim, 'numcolorbufs', 2)
+	for n_, v_ in (('vec0valuey', .6), ('vec1valuex', 9), ('vec1valuew', 1), ('vec2valuez', 1)): setp(sim, n_, v_)
+	col = mk(Q, renderselectTOP, 'col', -200, -100); col.par.top = sim; setp(col, 'bufferindex', 1); setp(col, 'format', 'rgba16float')
+	vd = textfile(Q, 'mat_vert', GL + '/bouquet_vert.glsl', -200, -300)
+	pd = textfile(Q, 'mat_pixel', GL + '/bouquet_pixel.glsl', -200, -420)
+	m = mk(Q, glslMAT, 'mat', 0, -300); m.par.vdat = vd; m.par.pdat = pd
+	uniforms(m, ['uI0', 'uD0'])
+	for n_, v_ in (('vec0valuex', 1.2), ('vec0valuey', 1280), ('vec0valuez', 720), ('vec1valuex', 3.5), ('vec1valuey', 12), ('vec1valuez', 4), ('vec1valuew', 12)): setp(m, n_, v_)
+	m.seq.sampler.numBlocks = 2
+	setp(m, 'sampler0name', 'sPos'); m.par.sampler0top = sim
+	setp(m, 'sampler1name', 'sCol'); m.par.sampler1top = col
+	additive(m)
+	instgeo(Q, 'geo', m, PW * PH, 200, -300)
+	tgt = mk(Q, nullCOMP, 'target', 0, -600); tgt.par.ty = .55
+	cam = mk(Q, cameraCOMP, 'cam', 200, -450); setp(cam, 'viewanglemethod', 'vertfov'); setp(cam, 'fov', 42); cam.par.tz = 3.6; setp(cam, 'near', .05); setp(cam, 'far', 50)
+	setp(cam, 'lookat', tgt.path)
+	rend = mk(Q, renderTOP, 'render', 400, -300)
+	rend.par.camera = cam.path; rend.par.geometry = 'geo'
+	res(rend, 'rgba16float'); black_bg(rend); setp(rend, 'numcolorbufs', 3)
+	# hloubka ostrosti po vrstvách: středně a hodně rozostřené světlo se rozmaže jako celý obraz (levné, bez trhání)
+	l1 = mk(Q, renderselectTOP, 'dof_mid', 400, -500); l1.par.top = rend; setp(l1, 'bufferindex', 1); setp(l1, 'format', 'rgba16float')
+	l2 = mk(Q, renderselectTOP, 'dof_far', 400, -650); l2.par.top = rend; setp(l2, 'bufferindex', 2); setp(l2, 'format', 'rgba16float')
+	b1 = mk(Q, blurTOP, 'dof_mid_blur', 600, -500, (l1,)); setp(b1, 'size', 6)
+	b2 = mk(Q, blurTOP, 'dof_far_blur', 600, -650, (l2,)); setp(b2, 'size', 18)
+	dof = mk(Q, compositeTOP, 'dof', 800, -300, (rend, b1, b2)); setp(dof, 'operand', 'add')
+	glow = bloom(Q, dof, 1000, -300, "0.7")
+	mk(Q, nullTOP, 'out1', 1600, -300, (glow,))
