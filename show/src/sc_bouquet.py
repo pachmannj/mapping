@@ -50,8 +50,17 @@ def update(A, dt, now):
 	S['t'] += dt
 	tempo = A['tempo'] if (on and A['bpm']) else 1
 	eS = lp('eS', e * on, dt, 2.5, 1.0); bS = lp('bS', B, dt, 1.5, .6)
-	# hudební čas: rychlost proudění roste s energií a hutností, ale fáze se jen plynule sčítá → žádné trhnutí
-	speed = lp('spd', (.35 + eS * 1.3 + bS * .9) * (tempo if on else 1) + (0 if on else .15), dt, 1.2, .6)
+	# ROZJEZD písničky: dlouhodobý průměr energie vs. teď. Když hudba naroste (build-up) → intenzita roste plynule,
+	# když přijde drop (skok energie po tišší pasáži) → „vlna“ surge, která celou kytici rozpohybuje a rozbarví a pomalu doznívá.
+	eL = lp('eL', eS, dt, 1 / 10.0)
+	rise = max(0.0, eS - eL)
+	inten = lp('inten', max(0.0, min(1.0, eS * .55 + bS * .45 + rise * 2.5)) * on, dt, 1.5, .4)
+	if on and rise > .14 and eS > .45 and now - S.get('lastDrop', -99) > 8:
+		S['lastDrop'] = now; S['surgeT'] = 1.0
+	S['surgeT'] = S.get('surgeT', 0.0) * math.exp(-dt / 5.0)
+	surge = lp('surge', S['surgeT'], dt, 2.5, 3.0)
+	# hudební čas: rychlost proudění roste s energií, hutností a rozjezdem, ale fáze se jen plynule sčítá → žádné trhnutí
+	speed = lp('spd', (.3 + eS * 1.0 + bS * .7 + inten * .8 + surge * 1.6) * (tempo if on else 1) + (0 if on else .15), dt, 1.2, .6)
 	S['ph'] += dt * speed
 	# kopák: měkká vlna po lístcích (náběh vyhlazený)
 	if A['kickHit'] and on and S['wave'] > .5:
@@ -70,25 +79,29 @@ def update(A, dt, now):
 		S['lobO'][i] += (v - S['lobO'][i]) * (1 - math.exp(-dt * 2.5))
 		out.append(S['lobO'][i])
 	# rozkvět (společný základ, každá květina k tomu přidá své pásmo)
-	tgt = ((.25 + eS * .55 + bS * .3) * P('Qbloom')) if on else (.45 + .3 * math.sin(S['t'] * .2))
+	tgt = ((.22 + eS * .45 + bS * .25 + inten * .2 + surge * .3) * P('Qbloom')) if on else (.45 + .3 * math.sin(S['t'] * .2))
 	bloom = lp('bloom', max(.1, min(1.0, tgt)), dt, 1.5, .7)
-	mist = lp('mist', (bS * .3 + max(0.0, S['lobS'][11] - S['lobL'][11]) * 1.5) * on * P('Qmist'), dt, 1.2, .5)
+	mist = lp('mist', (bS * .25 + max(0.0, S['lobS'][11] - S['lobL'][11]) * 1.5 + surge * .6) * on * P('Qmist'), dt, 1.2, .5)
 	flutter = lp('flut', (.25 + A['hatEnv'] * .8 + b['air'] * .6) * on * R + (.2 if not on else 0), dt, 2.0, 1.0)
 	breathe = lp('brth', A['kickEnv'] * on * R, dt, 5.0, 2.0)
-	wind = lp('wind', .35 + (eS * .9 + bS * .5) * R * on, dt, 1.0, .5)
-	und = lp('und', .5 + (eS * .8 + bS * .6) * on, dt, 1.0, .5)
-	glow = lp('glow', A['kickEnv'] * on * R, dt, 6.0, 2.0)
+	wind = lp('wind', .3 + (eS * .6 + bS * .4 + inten * .6 + surge * 1.2) * R * on, dt, 1.0, .5)
+	und = lp('und', .45 + (eS * .6 + bS * .4 + inten * .6 + surge * 1.0) * on, dt, 1.0, .5)
+	glow = lp('glow', (A['kickEnv'] * .8 + surge * .6) * on * R, dt, 6.0, 2.0)
+	# barvy lilií: odstín se posouvá rychlostí podle intenzity (v klidu skoro stojí), rozptyl mezi liliemi roste s rozjezdem
+	S['hue'] = S.get('hue', 0.0) + dt * (.02 + (inten * .25 + surge * .9 + A['centroid'] * .1) * on * P('Qhue'))
+	spread = lp('hsp', (.15 + inten * .25 + surge * .3) * on * P('Qhue') + .1, dt, 1.0, .4)
 	g = q('sim')
 	setv(g, 0, (S['t'], bloom, breathe, flutter))
 	setv(g, 1, (S['wave'], waveA, mist, P('Qbright')))
-	setv(g, 2, (0, glow, P('Qcolor'), 0))
+	setv(g, 2, (math.sin(S['hue']) * .75, glow,   # odstín se kývá v rozsahu korálová ↔ růžová ↔ fialová (nikdy zelená)
+		 P('Qcolor') * (.85 + inten * .25), spread))
 	setv(g, 3, (S['ph'], wind, und, 0))
 	for i in range(3): setv(g, 4 + i, tuple(out[4 * i:4 * i + 4]))
 	# kamera: pomalé kývání před kyticí podle hudebního času, dopředu se nadechne vyhlazeně
-	S['ang'] += dt * (.06 + (eS * .1 + bS * .06) * on) * P('Qcam')
-	push = lp('push', A['kickEnv'] * on * .25 * R * P('Qcam') + eS * .2, dt, 2.0, .8)
+	S['ang'] += dt * (.05 + (eS * .07 + bS * .05 + inten * .06 + surge * .22) * on) * P('Qcam')
+	push = lp('push', (A['kickEnv'] * .15 * R + eS * .1 + surge * .25) * on * P('Qcam'), dt, 1.5, .6)
 	a = math.sin(S['ang']) * .75                       # kamera se kývá ±45° před kyticí (zezadu květy nejsou vidět)
-	rad = 4.1 - push + .35 * math.sin(S['ang'] * .7)
+	rad = 4.5 - push + .35 * math.sin(S['ang'] * .7)
 	cx, cy, cz = math.sin(a) * rad * .8, .7 + .3 * math.sin(S['ang'] * .45), math.cos(a) * rad
 	c = q('cam')
 	c.par.tx, c.par.ty, c.par.tz = cx, cy, cz          # natočení řeší Look At na null „target“
@@ -100,6 +113,6 @@ def update(A, dt, now):
 	S['focus'] += (fd - S['focus']) * (1 - math.exp(-dt * 1.2))
 	r = q('render')
 	setv(q('mat'), 0, (P('Qsize'), r.width, r.height, 0))
-	setv(q('mat'), 1, (S['focus'], 26 * P('Qdof'), 11 * P('Qdof') + .01, 0))
+	setv(q('mat'), 1, (S['focus'], 12 * P('Qdof') + .01, 5, 14))
 
 def look_name(): return 'kytice'

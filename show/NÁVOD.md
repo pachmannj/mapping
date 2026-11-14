@@ -76,7 +76,7 @@ virbl s ní pružně cukne, místo, kde právě raší, se rozsvítí na hi-hate
 Záložka **Květ**: citlivost rozkvětu, velikost květu, jas.
 
 ## Scéna Kytice
-Kytice z 655 tisíc svítících bodů: pět růžových lilií, tři chryzantémy, dvě pivoňky, stonky, listy a pyl ve vzduchu.
+Kytice z 459 tisíc svítících bodů: pět růžových lilií, tři chryzantémy, dvě pivoňky, stonky, listy a pyl ve vzduchu.
 Květiny jsou procedurální, takže opravdu rozkvétají. Kamera se pomalu kývá před kyticí s malou hloubkou ostrosti:
 co je mimo ostrost, rozpije se do měkkých světelných skvrn.
 Pohyb je organický a plynulý jako u Vortexu: vítr kývá květy na stoncích (stonky jsou dole ukotvené a ohýbají se),
@@ -84,7 +84,10 @@ po lístcích běží vlny a mlha proudí polem. Hudba mění rychlost a sílu t
 **Každá květina poslouchá jiné frekvenční pásmo** (od basů po výšky): podle změn ve svém pásmu se rozvíjí, vlní a září.
 Kopák pošle měkkou vlnu po lístcích a lilie se rozzáří, virbl občas přeostří kameru na jinou květinu (nejvýš jednou za 4 s),
 hutnost a výšky rozpouštějí části květů do mlhy.
-Záložka **Kytice**: citlivost rozkvětu, rozpad do mlhy, vlna kopáku, hloubka ostrosti, pohyb kamery, velikost bodů, jas, sytost barev.
+Růžové lilie mění barvy podle hudby (korálová ↔ růžová ↔ fialová, každá lilie podle svého pásma jinak).
+Když se písnička rozjede, kytice se postupně víc rozpohybuje, rozvine a rozzáří; na dropu přijde vlna, která všechno
+rozvlní, rozbarví a rozpustí do mlhy a pomalu dozní.
+Záložka **Kytice**: citlivost rozkvětu, rozpad do mlhy, vlna kopáku, hloubka ostrosti, pohyb kamery, velikost bodů, jas, sytost barev, měnění barev lilií.
 
 ## Pro úpravy
 - Zdrojáky jsou ve `src/` (Python + GLSL), TouchDesigner je čte ze souborů a změny se projeví hned.

@@ -7,7 +7,7 @@
 // Výstup 0 = poloha (xyz, násobek velikosti), výstup 1 = barva (rgb, alfa).
 uniform vec4 uA0;   // čas, rozkvět (0–1), dýchání (vyhlazené), chvění (vyhlazené)
 uniform vec4 uA1;   // poloha vlny kopáku (0 = střed, 1.5 = za špičkami), síla vlny, rozpad do mlhy, jas
-uniform vec4 uA2;   // odstín posun, záře lilií, sytost, -
+uniform vec4 uA2;   // posun odstínu lilií (rad), záře lilií, sytost, rozptyl barev mezi liliemi
 uniform vec4 uA3;   // fáze proudění (hudební čas), síla větru, vlnění lístků, -
 uniform vec4 uL0; uniform vec4 uL1; uniform vec4 uL2;   // 12 frekvenčních pásem (vyhlazená v sc_bouquet.py)
 layout(location = 0) out vec4 oPos;
@@ -25,6 +25,11 @@ float band(float i) {                                  // jen desetinná čísla
 	vec4 v = i < 3.5 ? uL0 : (i < 7.5 ? uL1 : uL2);
 	float j = mod(i, 4.);
 	return j < .5 ? v.x : (j < 1.5 ? v.y : (j < 2.5 ? v.z : v.w));
+}
+vec3 hueRot(vec3 c, float a) {                         // otočení odstínu se zachováním jasu
+	float y = dot(c, vec3(.299, .587, .114)), i = dot(c, vec3(.596, -.274, -.322)), q = dot(c, vec3(.211, -.523, .312));
+	float ca = cos(a), sa = sin(a); float i2 = i * ca - q * sa, q2 = i * sa + q * ca;
+	return max(vec3(y + .956 * i2 + .621 * q2, y - .272 * i2 - .647 * q2, y - 1.106 * i2 + 1.703 * q2), 0.);
 }
 vec3 noise3(vec3 p) {                                  // hladký vektorový šum (součet sinů, levný)
 	return vec3(sin(p.y * 1.7 + p.z * 1.3 + sin(p.x * 2.1)), sin(p.z * 1.9 + p.x * 1.1 + sin(p.y * 1.7)),
@@ -125,7 +130,10 @@ void main() {
 			lp += nrm * pow(abs(v), 4.) * sin(u * 34. + pi) * .025;   // zvlněný okraj
 			lp += nrm * smoothstep(.2, .0, abs(v)) * .01;           // žilka uprostřed
 			vec3 deep = mix(vec3(1., .2, .62), vec3(.92, .3, .9), h1(fid * 5.3));   // každá lilie trochu jiný odstín růžové
-			col = mix(vec3(1., .85, .95), deep, smoothstep(.05, .7, u) * (.6 + .4 * abs(v)));
+			// barva podle hudby: společný posun + každá lilie podle svého pásma jinak (rozptyl roste, když se písnička rozjede)
+			float ha = uA2.x + ((bnd - .45) * 2. + (h1(fid * 7.7) - .5)) * uA2.w;
+			deep = hueRot(deep, ha);
+			col = mix(hueRot(vec3(1., .85, .95), ha * .5), deep, smoothstep(.05, .7, u) * (.6 + .4 * abs(v)));
 			alpha = .06 + .35 * pow(abs(v), 8.) + .08 * smoothstep(.7, 1., u);
 			size = 1.1;
 		}
@@ -187,5 +195,5 @@ void main() {
 	float glow = (.55 + bnd * 1.1) * (type > 1.5 ? 1. + uA2.y * .8 : 1.);
 	col = mix(vec3(dot(col, vec3(.33))), col, uA2.z);
 	oPos = vec4(P, size * (1. + wv * .3));
-	oCol = vec4(col * alpha * .4 * glow * uA1.w * (1. + wv * 1.), 1.);
+	oCol = vec4(col * alpha * 1.3 * glow * uA1.w * (1. + wv * 1.), 1.);
 }
