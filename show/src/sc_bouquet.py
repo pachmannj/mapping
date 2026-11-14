@@ -1,4 +1,4 @@
-# SCÉNA KYTICE — procedurální květiny z půl milionu svítících bodů (chryzantémy, pivoňky, lilie), kamera pomalu
+# SCÉNA KYTICE — procedurální květiny ze svítících bodů, převedené do znaků (ASCII / písmena) nebo jako body; kamera létá okolo
 # proplouvá kyticí s malou hloubkou ostrosti (rozmazané světelné skvrny vpředu i vzadu). Body počítá shader
 # bouquet_sim.glsl, takže květy skutečně rozkvétají. Reakce na hudbu:
 #   energie + každá změna v hudbě → rozkvět (lilie se ohne dozadu, pivoňky se otevřou)
@@ -118,14 +118,17 @@ def update(A, dt, now):
 	setv(g, 3, (S['ph'], wind, und, 0))
 	for i in range(3): setv(g, 4 + i, tuple(out[4 * i:4 * i + 4]))
 	setv(g, 7, (bar, kR, sR, hstr * R))
-	# kamera: pomalé kývání před kyticí podle hudebního času, dopředu se nadechne vyhlazeně
-	S['ang'] += dt * (.05 + (eS * .07 + bS * .05 + inten * .06 + surge * .22) * on) * P('Qcam')
-	push = lp('push', (eS * .1 + surge * .25) * on * P('Qcam'), dt, 1.5, .6)
+	# kamera: LÉTÁ OKOLO KYTICE, rychlost svázaná s tempem (1 oběh za 8 taktů = 32 dob), rozjezd a drop ji zrychlí;
+	# výška se vlní po 2 taktech, vzdálenost dýchá, na každou dobu se kamera nadechne dopředu
+	beat_s = 60.0 / max(60.0, bpm)
+	orbit = lp('orb', (2 * math.pi / (32 * beat_s)) * (.55 + inten * .5 + surge * 1.0) if on else .08, dt, 1.0, .5)
+	S['ang'] += dt * orbit * P('Qcam')
+	push = lp('push', (eS * .15 + surge * .4) * on * P('Qcam'), dt, 1.5, .6)
 	bx = S['bp'] % 1.0
-	push += (math.exp(-bx * 3.0) * min(1.0, bx / .07)) * kR * .12 * P('Qcam')   # kamera se na každou dobu nadechne
-	a = math.sin(S['ang']) * .75                       # kamera se kývá ±45° před kyticí (zezadu květy nejsou vidět)
-	rad = 4.5 - push + .35 * math.sin(S['ang'] * .7)
-	cx, cy, cz = math.sin(a) * rad * .8, .7 + .3 * math.sin(S['ang'] * .45), math.cos(a) * rad
+	push += (math.exp(-bx * 3.0) * min(1.0, bx / .07)) * kR * .15 * P('Qcam')   # kamera se na každou dobu nadechne
+	a = S['ang']
+	rad = 4.7 - push + .5 * math.sin(S['bp'] * math.pi / 16)                    # přiblížení a oddálení po 8 dobách
+	cx, cy, cz = math.sin(a) * rad, .7 + .6 * math.sin(S['bp'] * math.pi / 8), math.cos(a) * rad
 	c = q('cam')
 	c.par.tx, c.par.ty, c.par.tz = cx, cy, cz          # natočení řeší Look At na null „target“
 	# ostření: na virbl přeostří na jinou květinu, nejvýš jednou za 4 s, plynule
@@ -134,6 +137,11 @@ def update(A, dt, now):
 	fx, fy, fz = FOCUS[S['fi']]
 	fd = math.sqrt((fx - cx) ** 2 + (fy - cy) ** 2 + (fz - cz) ** 2)
 	S['focus'] += (fd - S['focus']) * (1 - math.exp(-dt * 1.2))
+	# znaky: styl, velikost buňky (s hutností o kousek menší = jemnější), zamíchání znaků na dobu
+	sty = {'points': 0, 'ascii': 1, 'letters': 2}.get(P('Qstyle'), 1)
+	scr = (math.exp(-bx * 4.0) * min(1.0, bx / .05)) * (kR * .5 + sR * .3) + surge * .3
+	setv(q('ascii'), 0, (P('Qcell') * (1.1 - bS * .2), sty, 2.1, .12 if sty else 0))
+	setv(q('ascii'), 1, (S['t'], min(.8, scr), P('Qcolor'), 0))
 	r = q('render')
 	setv(q('mat'), 0, (P('Qsize'), r.width, r.height, 0))
 	setv(q('mat'), 1, (S['focus'], 12 * P('Qdof') + .01, 5, 14))

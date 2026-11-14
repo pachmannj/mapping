@@ -76,6 +76,11 @@ virbl s ní pružně cukne, místo, kde právě raší, se rozsvítí na hi-hate
 Záložka **Květ**: citlivost rozkvětu, velikost květu, jas.
 
 ## Scéna Kytice
+Kytice se zobrazuje **ve znacích**: obraz se rozdělí na buňky jako terminál a každá buňka dostane znak podle toho, kolik je v ní
+světla, v barvě květiny pod ní. Styly: **ASCII znaky**, **Písmena**, nebo původní **Body** (záložka Kytice → Styl, Velikost znaku).
+Na dobu se část znaků krátce zamíchá. Kamera **létá okolo kytice** rychlostí podle tempa (1 oběh za 8 taktů, při rozjezdu a dropu rychleji),
+výška se vlní po 2 taktech a na každou dobu se nadechne dopředu. Atlas znaků (`media/glyphs.png`) vyrábí `tools/make_glyphs.py`.
+
 Kytice z 327 tisíc svítících bodů: pět růžových lilií, tři chryzantémy, dvě pivoňky, stonky, listy a pyl ve vzduchu.
 Květiny jsou procedurální, takže opravdu rozkvétají. Kamera se pomalu kývá před kyticí s malou hloubkou ostrosti:
 co je mimo ostrost, rozpije se do měkkých světelných skvrn.

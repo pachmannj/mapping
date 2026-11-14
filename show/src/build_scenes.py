@@ -222,7 +222,7 @@ def build_bouquet(SH):
 	setp(m, 'sampler1name', 'sCol'); m.par.sampler1top = col
 	additive(m)
 	instgeo(Q, 'geo', m, PW * PH, 200, -300)
-	tgt = mk(Q, nullCOMP, 'target', 0, -600); tgt.par.ty = .55
+	tgt = mk(Q, nullCOMP, 'target', 0, -600); tgt.par.ty = .75
 	cam = mk(Q, cameraCOMP, 'cam', 200, -450); setp(cam, 'viewanglemethod', 'vertfov'); setp(cam, 'fov', 42); cam.par.tz = 3.6; setp(cam, 'near', .05); setp(cam, 'far', 50)
 	setp(cam, 'lookat', tgt.path)
 	rend = mk(Q, renderTOP, 'render', 400, -300)
@@ -234,5 +234,8 @@ def build_bouquet(SH):
 	b1 = mk(Q, blurTOP, 'dof_mid_blur', 600, -500, (l1,)); setp(b1, 'size', 6)
 	b2 = mk(Q, blurTOP, 'dof_far_blur', 600, -650, (l2,)); setp(b2, 'size', 18)
 	dof = mk(Q, compositeTOP, 'dof', 800, -300, (rend, b1, b2)); setp(dof, 'operand', 'add')
-	glow = bloom(Q, dof, 1000, -300, "0.7")
-	mk(Q, nullTOP, 'out1', 1600, -300, (glow,))
+	gl = mk(Q, moviefileinTOP, 'glyphs', 800, -500); gl.par.file = 'media/glyphs.png'   # atlas znaků (tools/make_glyphs.py)
+	asc = glsl(Q, 'ascii', 'bouquet_ascii.glsl', 1000, -300, ['uS0', 'uS1'], (dof, gl))
+	for n_, v_ in (('vec0valuex', 9), ('vec0valuey', 1), ('vec0valuez', 1.6), ('vec1valuez', 1)): setp(asc, n_, v_)
+	glow = bloom(Q, asc, 1200, -300, "0.7")
+	mk(Q, nullTOP, 'out1', 1800, -300, (glow,))
