@@ -88,7 +88,7 @@ stonky (všechny se obloukem sbíhají do jednoho svazku pod kyticí, který pok
 Pohyb je organický a plynulý: vítr kývá květy na stoncích, po lístcích běží vlny, mlha proudí polem; květy se nezavírají.
 Kopák pošle po lístcích vlnu světla od středu ke špičkám — vždy proběhne celou kytici a plynule dozní (i krátký tón), další vlna přijde, až ta předchozí doběhne; lilie se rozzáří spolu s vlnou, každá květina poslouchá své frekvenční pásmo,
 lilie mění barvy podle hudby (korálová ↔ růžová ↔ fialová), rozjezd písničky kytici rozpohybuje a drop ji rozvlní a rozpustí do mlhy.
-Záložka **Kytice**: citlivost rozkvětu, rozpad do mlhy, vlna kopáku, hloubka ostrosti, pohyb kamery, velikost bodů, jas,
+Záložka **Kytice**: **limit kývání** (jak daleko se smí květy ve větru vychýlit; 0 = stojí, 1 = výchozí), citlivost rozkvětu, rozpad do mlhy, vlna kopáku, hloubka ostrosti, pohyb kamery, velikost bodů, jas,
 sytost barev, měnění barev lilií, **Styl** (ASCII znaky / Písmena / Body — platí pro Kytici, Květ i Ptáka), velikost znaků
 (znaky rostou s hlasitostí).
 

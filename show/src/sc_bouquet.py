@@ -87,7 +87,7 @@ def update(A, dt, now):
 	mist = lp('mist', (bS * .25 + max(0.0, S['lobS'][11] - S['lobL'][11]) * 1.5 + surge * .6) * on * P('Qmist'), dt, 1.2, .5)
 	flutter = lp('flut', (.25 + A['hatEnv'] * .8 + b['air'] * .6) * on * R + (.2 if not on else 0), dt, 2.0, 1.0)
 	breathe = lp('brth', A['kickEnv'] * on * R, dt, 5.0, 2.0)
-	wind = lp('wind', .3 + (eS * .6 + bS * .4 + inten * .6 + surge * 1.2) * R * on, dt, 1.0, .5)
+	wind = lp('wind', min(1.4, .3 + (eS * .6 + bS * .4 + inten * .6 + surge * 1.2) * R * on), dt, 1.0, .5)   # strop větru
 	und = lp('und', .45 + (eS * .6 + bS * .4 + inten * .6 + surge * 1.0) * on, dt, 1.0, .5)
 	glow = lp('glow', (waveA * .7 + surge * .6) * on * R, dt, 4.0, 2.0)   # záře lilií jde s vlnou (žádné bliknutí)
 	# barvy lilií: odstín se posouvá rychlostí podle intenzity (v klidu skoro stojí), rozptyl mezi liliemi roste s rozjezdem
@@ -98,7 +98,7 @@ def update(A, dt, now):
 	setv(g, 1, (S['wave'], waveA, mist, P('Qbright')))
 	setv(g, 2, (math.sin(S['hue']) * .75, glow,   # odstín se kývá v rozsahu korálová ↔ růžová ↔ fialová (nikdy zelená)
 		 P('Qcolor') * (.85 + inten * .25), spread))
-	setv(g, 3, (S['ph'], wind, und, 0))
+	setv(g, 3, (S['ph'], wind, und, .13 * P('Qsway')))   # limit kývání (záložka Kytice)
 	for i in range(3): setv(g, 4 + i, tuple(out[4 * i:4 * i + 4]))
 	# kamera: pomalé kývání před kyticí podle hudebního času, dopředu se nadechne vyhlazeně
 	S['ang'] += dt * (.05 + (eS * .07 + bS * .05 + inten * .06 + surge * .22) * on) * P('Qcam')

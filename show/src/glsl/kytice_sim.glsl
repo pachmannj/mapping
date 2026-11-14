@@ -8,7 +8,7 @@
 uniform vec4 uA0;   // čas, rozkvět (0–1), dýchání (vyhlazené), chvění (vyhlazené)
 uniform vec4 uA1;   // poloha vlny kopáku (0 = střed, 1.5 = za špičkami), síla vlny, rozpad do mlhy, jas
 uniform vec4 uA2;   // posun odstínu lilií (rad), záře lilií, sytost, rozptyl barev mezi liliemi
-uniform vec4 uA3;   // fáze proudění (hudební čas), síla větru, vlnění lístků, -
+uniform vec4 uA3;   // fáze proudění (hudební čas), síla větru, vlnění lístků, největší možné kývání
 uniform vec4 uL0; uniform vec4 uL1; uniform vec4 uL2;   // 12 frekvenčních pásem (vyhlazená v sc_bouquet.py)
 layout(location = 0) out vec4 oPos;
 layout(location = 1) out vec4 oCol;
@@ -94,6 +94,8 @@ void main() {
 	float open = clamp(uA0.y * .55 + bnd * .6 - .08 + sin(ph * .23 + fid * 1.7) * .07, .04, 1.);
 	// vítr: celý květ se kývá na stonku (plynulé pole, každá květina v jiné fázi), s energií silněji
 	vec3 sway = noise3(vec3(fid * 2.3, ph * .35, fid * .7)) * uA3.y * (.08 + bnd * .07);
+	float swL = length(sway), swMax = max(uA3.w, .001);      // limit kývání: plynulé „měkké“ omezení, nikdy víc než swMax
+	sway *= swMax * (1. - exp(-swL / swMax)) / max(swL, 1e-4);
 	up = normalize(up + sway * 1.6);
 	vec3 lp, nrm = vec3(0., 0., 1.);
 	float u = sqrt(r2), v = r3 * 2. - 1., part = r1;      // sqrt: víc bodů ke špičkám (lístek se rozšiřuje)           // part: 0–0.78 lístky, pak tyčinky / střed, stonek, listy
