@@ -97,7 +97,7 @@ void main() {
 	up = normalize(up + sway * 1.6);
 	vec3 lp, nrm = vec3(0., 0., 1.);
 	float u = sqrt(r2), v = r3 * 2. - 1., part = r1;      // sqrt: víc bodů ke špičkám (lístek se rozšiřuje)           // part: 0–0.78 lístky, pak tyčinky / střed, stonek, listy
-	float waveUV = 0., pid = 0.;
+	float waveUV = 0., pid = 0., stemU = -1., leafT = -1.;
 	if (part < .78) {
 		float pr = part / .78;
 		if (type < .5) {                                 // CHRYZANTÉMA: ~170 úzkých lístků ve spirále, špičky se stáčejí nahoru
@@ -155,16 +155,14 @@ void main() {
 			lp = vec3(cos(a) * rr, sin(a) * rr, .04 * (1. - u) + (type < .5 ? .0 : .03));
 			col = type < .5 ? vec3(.9, .85, .5) : vec3(1., .8, .3); alpha = .07;
 		}
-	} else if (part < .93) {                             // stonek: dolů, mírný oblouk
-		float Ls = 1.5;
-		float a = r4 * 6.2832;
-		lp = vec3(cos(a), sin(a), 0.) * .012 + vec3(sin(u * 2.2 + fid) * .12 * u, cos(u * 1.7 + fid) * .06 * u, -u * Ls);
+	} else if (part < .93) {                             // stonek: dráha se počítá níž (od hlavy do společného svazku)
+		stemU = r2; lp = vec3(0.);
 		col = vec3(.35, .8, .35); alpha = .045;
 	} else {                                             // listy na stonku
 		float li = floor(r4 * 2.);
 		float th = h1(li + fid * 3.) * 6.2832;
 		lp = petal(th, .015, .5, .25, -1.1, .07 * pow(sin(3.1416 * u), .8), .5, u, v, nrm);
-		lp.z -= mix(.7, 1.3, li) + .0;
+		leafT = mix(.22, .4, li);                        // kde na stonku list roste
 		col = mix(vec3(.25, .7, .2), vec3(.6, 1., .35), pow(abs(v), 4.)); alpha = .025 + .06 * pow(abs(v), 8.);
 	}
 	// do světa: místní osa z = osa květu. Hlava květu se ve větru posune, stonek je dole ukotvený a ohne se.
@@ -179,8 +177,22 @@ void main() {
 	vec3 head = sway * .9 * sc;
 	float k = sc * 1.45;
 	P = c * vec3(1.55, 1.15, 1.15) + B * lp * k * (onStem ? 1. : breathe);
-	if (onStem) P += head * pow(clamp(1. + lp.z / 1.6, 0., 1.), 2.);   // čím blíž hlavě, tím víc se ohne
-	else P += head;
+	if (!onStem) P += head;
+	else {
+		// KYTICE: všechny stonky se obloukem sbíhají do jednoho svazku pod kyticí a ten pokračuje dolů z obrazu
+		vec3 Hw = c * vec3(1.55, 1.15, 1.15) + head;   // hlava květu (i s větrem)
+		vec3 G = vec3(0., -1.9, .2);                    // uzel kytice
+		vec3 C1 = Hw - upRest * .8 * k;                 // stonek nejdřív vyjde ve směru květu, pak se stočí k uzlu
+		float t = stemU >= 0. ? stemU : leafT, tb = .6, s_;
+		vec3 path, tang;
+		if (t < tb) { s_ = t / tb; path = mix(mix(Hw, C1, s_), mix(C1, G + vec3(cos(fid * 2.4), 0., sin(fid * 2.4)) * .03, s_), s_); tang = normalize((C1 - Hw) * (1. - s_) + (G - C1) * s_ + 1e-4); }
+		else { s_ = (t - tb) / (1. - tb); path = G + vec3(cos(fid * 2.4), 0., sin(fid * 2.4)) * (.03 + .05 * smoothstep(0., .15, s_)) + vec3(0., -4.5 * s_, 0.);   // svazek stonků vedle sebe tang = vec3(0., -1., 0.); }
+		if (stemU >= 0.) {
+			vec3 e1 = normalize(cross(tang, vec3(0., 0., 1.)) + 1e-4), e2 = cross(tang, e1);
+			float a = r4 * 6.2832;
+			P = path + (e1 * cos(a) + e2 * sin(a)) * .012 * k;
+		} else P = path + B * lp * k;                   // list vyrůstá ze stonku
+	}
 	vec3 Nw = B * nrm;
 	// vlnění lístků: vlna běží od středu ke špičkám, každý lístek v jiné fázi, síla podle pásma květiny
 	float und = sin(waveUV * 5. - ph * 1.7 + pid * 1.3 + fid) * uA3.z * (.012 + bnd * .035) * waveUV * waveUV;

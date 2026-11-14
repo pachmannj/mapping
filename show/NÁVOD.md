@@ -84,7 +84,7 @@ Záložka **Květ**: nafouknutí dlouhým tónem, náklon v rytmu, otáčení kv
 
 ## Scéna Kytice
 (Vrácená verze bez znaků a bez rytmických hodin.) Kytice ze svítících bodů: pět růžových lilií, tři chryzantémy, dvě pivoňky,
-stonky, listy a pyl ve vzduchu. Kamera se pomalu kývá před kyticí s malou hloubkou ostrosti (rozmazané světelné skvrny).
+stonky (všechny se obloukem sbíhají do jednoho svazku pod kyticí, který pokračuje dolů z obrazu), listy a pyl ve vzduchu. Kamera se pomalu kývá před kyticí s malou hloubkou ostrosti (rozmazané světelné skvrny).
 Pohyb je organický a plynulý: vítr kývá květy na stoncích, po lístcích běží vlny, mlha proudí polem; květy se nezavírají.
 Kopák pošle po lístcích vlnu světla od středu ke špičkám — vždy proběhne celou kytici a plynule dozní (i krátký tón), další vlna přijde, až ta předchozí doběhne; lilie se rozzáří spolu s vlnou, každá květina poslouchá své frekvenční pásmo,
 lilie mění barvy podle hudby (korálová ↔ růžová ↔ fialová), rozjezd písničky kytici rozpohybuje a drop ji rozvlní a rozpustí do mlhy.
