@@ -1,6 +1,6 @@
 # SCÉNA KVĚT — jedna velká květina ze svítících bodů ve stejném nastavení jako Kytice (znaky / body, rytmus, rány, kamera
-# létá okolo; posuvníky v záložce Kytice platí i tady). Podle beatu a písničky se květina pořád dokola proměňuje
-# v další druhy: lilie → růže → tulipán → pivoňka … Body přeletí obloukem z lístků jednoho
+# létá okolo; posuvníky v záložce Kytice platí i tady). Teď jen lilie; když do ORDER přidáš další druhy, květina se
+# podle beatu a písničky pořád dokola proměňuje v další druhy. Body přeletí obloukem z lístků jednoho
 # druhu do lístků druhého. Čím víc se písnička rozjede, tím častěji se druh mění (každé 2 takty až každé 2 doby),
 # drop přepne hned. Květ se přitom pomalu otáčí kolem své osy, s tempem rychleji.
 import math
@@ -8,14 +8,14 @@ import math
 SHOW = '/project1/show'
 PATH = '/project1/show/flower'
 S = {}
-ORDER = [2, 5, 3, 1]                # lilie, růže, tulipán, pivoňka (čísla druhů v bouquet_sim.glsl); malé bílé květy vyřazené
+ORDER = [2]                         # jen lilie (další druhy v bouquet_sim.glsl: 0 chryzantéma, 1 pivoňka, 3 tulipán, 4 kopretina, 5 růže)
 NAMES = {0: 'chryzantéma', 1: 'pivoňka', 2: 'lilie', 3: 'tulipán', 4: 'kopretina', 5: 'růže'}
 
 def P(name): return getattr(op(SHOW).par, name).eval()
 
 def species(St, A, dt, now, x):
 	"""vybere druh: přepíná na doby (víc energie = častěji), drop hned; vrací (druh A, druh B, morf, otočení, velikost)"""
-	F = St.setdefault('F', dict(i=0, j=1, m=0.0, morph=False, last=0.0, spin=0.0, drop=0.0))
+	F = St.setdefault('F', dict(i=0, j=0, m=0.0, morph=False, last=0.0, spin=0.0, drop=0.0))
 	on, bp, inten = x['on'], x['bp'], x['inten']
 	# kolik dob mezi přepnutími: klid 8, rozjetá písnička 4 → 2 (posuvník Rychlost přepínání to násobí)
 	every = 8.0 if inten < .35 else (4.0 if inten < .7 else 2.0)
@@ -23,7 +23,7 @@ def species(St, A, dt, now, x):
 	if not on: every = 6.0
 	beat_s = 60.0 / max(60.0, x['bpm'])
 	drop = x['surge'] > .5 and now - F['drop'] > 4
-	if not F['morph'] and (bp - F['last'] >= every or drop):
+	if len(ORDER) > 1 and not F['morph'] and (bp - F['last'] >= every or drop):
 		if drop: F['drop'] = now
 		F['last'] = math.floor(bp + .5)                  # přepínat na celé doby
 		F['j'] = (F['i'] + 1) % len(ORDER); F['morph'] = True; F['m'] = 0.0

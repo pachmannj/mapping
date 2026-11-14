@@ -71,12 +71,11 @@ Výsledek se převádí **na znaky jako Kytice a Květ** (styl, velikost podle t
 Záložka **Pták**: síla máchnutí, světelné stopy, barevný lem, rastr z teček, rychlost videa, velikost ptáka, jas.
 
 ## Scéna Květ
-Jedna velká květina ze svítících bodů ve **stejném nastavení jako Kytice** (znaky / písmena / body, rytmus, rány, mávání,
-kamera létá okolo; posuvníky v záložce Kytice platí i tady). Podle beatu a písničky se květina pořád dokola **proměňuje
-v další druhy**: lilie → růže → tulipán → pivoňka … Body přeletí obloukem z lístků jednoho druhu
-do lístků druhého. Čím víc se písnička rozjede, tím častěji se druh mění (v klidu po 8 dobách, rozjetá písnička po 4 až 2 dobách),
-drop přepne hned. Květ se přitom otáčí kolem své osy, s tempem a rozjezdem rychleji; kamera zůstává zepředu a jen se mírně kolébá.
-Záložka **Květ**: rychlost přepínání druhů, otáčení květu.
+Jedna velká **lilie** ze svítících bodů ve **stejném nastavení jako Kytice** (znaky / písmena / body, rytmus, rány, mávání,
+pulz znaků na beat, barvy podle hudby; posuvníky v záložce Kytice platí i tady). Lilie se otáčí kolem své osy, s tempem
+a rozjezdem rychleji; kamera zůstává zepředu a jen se mírně kolébá.
+Záložka **Květ**: otáčení květu (a rychlost přepínání druhů — platí, jen když se v `src/sc_flower.py` do ORDER přidají další druhy:
+chryzantéma, pivoňka, tulipán, kopretina, růže; pak se květ podle beatu proměňuje z jednoho druhu do dalšího).
 
 ## Scéna Kytice
 Kytice se zobrazuje **ve znacích**: obraz se rozdělí na buňky jako terminál a každá buňka dostane znak podle toho, kolik je v ní
