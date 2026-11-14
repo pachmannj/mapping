@@ -50,14 +50,14 @@ def motion(St, A, dt, x, pfx):
 	def lp_(key, v, up, down):
 		o = M.setdefault(key, v); M[key] = o + (v - o) * (1 - math.exp(-dt * (up if v > o else down))); return M[key]
 	# DLOUHÝ TÓN / ZPĚV: hlasité středy (zpěv, synťák, pad), které se málo mění; dokud tón drží, nafukuje se (plno za ~3 s),
-	# když skončí, pomalu se stáhne. Práh se přizpůsobí písničce (tón musí vyčnívat nad ~90 % dlouhodobého průměru).
+	# když skončí, pomalu se stáhne. Práh se přizpůsobí písničce (tón musí vyčnívat nad dlouhodobý průměr).
 	L = A['LOB']; mid = sum(L[4:9]) / 5.0
 	mS = lp_('midS', mid, 6.0, 6.0)
 	chg = abs(mid - M.get('midP', mid)) / dt_; M['midP'] = mid
 	steady = max(0.0, 1.0 - lp_('chg', chg, 4.0, 4.0) * 1.2)
 	tone = lp_('tone', mS * steady, 3.0, 3.0) * on
 	avg = lp_('toneAvg', tone, .05, .05)
-	M['hold'] = min(6.0, max(0.0, M.get('hold', 0.0) + dt * max(-1.5, min(1.0, (tone - avg * .9) * 10.0))))
+	M['hold'] = min(4.0, max(0.0, M.get('hold', 0.0) + dt * max(-2.0, min(1.0, (tone - avg * 1.08) * 10.0))))   # tón musí vyčnívat nad průměr
 	infl = lp_('infl', min(1.0, M['hold'] / 3.0) * P(pfx + 'inflate'), .7, .35)
 	# ROZJEZD: písnička se rychle rozjede → točí se rychleji a zvětší se
 	ramp = lp_('ramp', min(1.0, x['inten'] * .6 + x['surge'] * .9) * on, .8, .3)
@@ -188,7 +188,7 @@ def _update(A, dt, now, solo):
 	push = lp('push', (eS * .15 + surge * .4) * on * P('Qcam'), dt, 1.5, .6)
 	bx = S['bp'] % 1.0
 	a = math.sin(S['ang']) * .35 if solo else S['ang']   # Květ: kamera zůstává zepředu, jen se mírně kolébá (zboku květ není hezký)
-	rad = (4.0 if solo else 4.7) - push + .5 * math.sin(S['bp'] * math.pi / 16)  # přiblížení a oddálení po 8 dobách
+	rad = (4.8 if solo else 4.7) - push + .5 * math.sin(S['bp'] * math.pi / 16)  # přiblížení a oddálení po 8 dobách
 	cx, cy, cz = math.sin(a) * rad, (.25 if solo else .7) + (.25 if solo else .6) * math.sin(S['bp'] * math.pi / 8), math.cos(a) * rad
 	c = q('cam')
 	c.par.tx, c.par.ty, c.par.tz = cx, cy, cz          # natočení řeší Look At na null „target“

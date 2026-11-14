@@ -34,7 +34,7 @@ def species(St, A, dt, now, x):
 	# nafouknutí dlouhým tónem, rozjezd, náklon v rytmu a otáčení — společné s Kytici (sc_bouquet.motion)
 	infl, ramp, tilt, spin = op(SHOW + '/sc_bouquet').module.motion(St, A, dt, x, 'F')
 	F['spin'] = spin
-	size = 1.1 * (1 + infl * .35 + ramp * .22)
+	size = 1.0 * (1 + infl * .25 + ramp * .15)
 	return ORDER[F['i']], ORDER[F['j']], F['m'] if F['morph'] else 0.0, F['spin'], (size, infl, tilt)
 
 def update(A, dt, now):

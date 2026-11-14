@@ -190,9 +190,10 @@ void main() {
 	float fr = row / H;
 	float id = fr < .16 ? 0. : (fr < .27 ? 1. : (fr < .37 ? 2. : (fr < .46 ? 3. : (fr < .55 ? 4. :
 	          (fr < .66 ? 5. : (fr < .76 ? 6. : (fr < .84 ? 7. : (fr < .91 ? 8. : (fr < .97 ? 9. : 10.)))))))));
-	if (uM0.x > .5) id = fr < (.97 - uM1.z * .12) ? 0. : 10.;   // dlouhý tón: víc bodů jde do atmosféry
+	// Květ: hlavní lilie (~60 % bodů), za ní 6 menších lilií ve stejném úhlu (~30 %), zbytek atmosféra (s dlouhým tónem víc)
+	if (uM0.x > .5) id = fr < .6 ? 0. : (fr < (.9 - uM1.z * .1) ? 11. + floor((fr - .6) / max(.3 - uM1.z * .1, .01) * 6.) : 10.);
 	vec3 P; vec3 col; float alpha = .12, size = 1.;
-	if (id > 9.5) {                                     // pyl a mlha volně ve vzduchu, proudí polem
+	if (id > 9.5 && id < 10.5) {                                 // pyl a mlha volně ve vzduchu, proudí polem
 		vec3 q = (vec3(r1, r2, r3) - .5) * vec3(4.5, 3.2, 3.);
 		if (uM0.x > .5) {                                // Květ: atmosféra = oblak kolem květu, s dlouhým tónem se rozšíří a rozzáří
 			vec3 dir = normalize(vec3(r1, r2, r3) - .5 + 1e-4);
@@ -210,11 +211,19 @@ void main() {
 	}
 	vec3 c, up; float type, sc, bi;
 	bool solo = uM0.x > .5;
-	if (solo) { c = vec3(0.); up = normalize(vec3(0., .3, 1.)); type = uM0.y; sc = max(uM1.y, .1); bi = 5.; id = 0.; }
+	if (solo) {
+		c = vec3(0.); up = normalize(vec3(0., .3, 1.)); type = uM0.y; sc = max(uM1.y, .1); bi = 5.;
+		if (id > 10.5) {                                 // menší lilie za hlavní: stejný úhel, každá na jiném pásmu
+			float j = id - 11.;
+			c = vec3((j < 3. ? -1. : 1.) * (.8 + mod(j, 3.) * .5), -.45 + mod(j * 1.7, 3.) * .42, -.8 - mod(j, 3.) * .4);
+			sc *= .66 - mod(j, 3.) * .08;
+			bi = 1. + j * 1.8;
+		}
+	}
 	else flower(id, c, up, type, sc, bi);
 	float fid = id;
 	// každá květina poslouchá své pásmo (sousední pásma trochu taky); jedna květina poslouchá celé spektrum
-	float bnd = solo ? (band(2.) + band(5.) + band(8.)) / 3. : band(bi) * .6 + (band(bi - 1.) + band(bi + 1.)) * .2;
+	float bnd = solo && id < .5 ? (band(2.) + band(5.) + band(8.)) / 3. : solo ? band(bi) * .6 + (band(bi - 1.) + band(bi + 1.)) * .2 : band(bi) * .6 + (band(bi - 1.) + band(bi + 1.)) * .2;
 	float bx, env;
 	// každá rána vyšle vlnu přes kytici: květina mávne, až k ní vlna dorazí (postupně, jako vlny Krasohledu)
 	vec2 at = (c * vec3(1.55, 1.15, 1.15)).xy;

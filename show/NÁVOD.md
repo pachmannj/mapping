@@ -71,7 +71,7 @@ Výsledek se převádí **na znaky jako Kytice a Květ** (styl a velikost znaků
 Záložka **Pták**: síla máchnutí, světelné stopy, barevný lem, rastr z teček, rychlost videa, velikost ptáka, jas.
 
 ## Scéna Květ
-Jedna velká **lilie** ze svítících bodů ve stylu Kytice (znaky / písmena / body, barvy podle hudby; posuvníky v záložce Kytice
+Velká **lilie** ze svítících bodů (a za ní šest menších lilií ve stejném úhlu, každá na jiném pásmu, rozmazané do hloubky) ve stylu Kytice (znaky / písmena / body, barvy podle hudby; posuvníky v záložce Kytice
 platí i tady), ale **plave plynule jako Vortex**: měkké mávnutí na rány, znaky dýchají bez cukání a nemíchají se.
 - **Dlouhý tón / zpěv**: dokud tón drží (hlasité stálé středy, které vyčnívají nad průměr písničky), lilie se nafukuje, rozevírá
   a kolem ní houstne svítící atmosféra; čím déle tón trvá, tím víc (plno za ~3 s). Když tón skončí, pomalu se stáhne.
