@@ -11,7 +11,7 @@ Audio-reaktivní projekce na průhledné plátno. Projekt: `DJ_Show.toe` (TouchD
 ## Klávesy (v okně TouchDesigneru / ovládání)
 | Klávesa | Akce |
 | --- | --- |
-| 1–7 | Krasohled / Vortex / Echoes / Heat / Pták / Květ / Kytice |
+| 1–7 | Krasohled / Vortex / Echoes / Heat / Křídla / Květ / Kytice |
 | 0 | automatické střídání |
 | B | blackout (znovu = zpět) |
 | F | záblesk |
@@ -53,22 +53,14 @@ Spotify zvuk nikomu jinému nepustí ven přímo, takže se zachytává to, co M
 4. V TD záložka **Audio** → `Zdroj zvuku` → **Zvuk z Macu (Spotify přes BlackHole)**. Zařízení BlackHole se vybere samo.
 Bez instalace jde nouzově `Živý vstup` + mikrofon MacBooku (zachytí reproduktory, ale reaguje hůř).
 
-## 3D okno (Pták a Květ)
-Anamorfní iluze jako na billboardech v New Yorku: obraz na zdi je přesně ta perspektiva, kterou by divák viděl skrz skutečný
-výklenek ve zdi. Objekt v něm má stín na podlaze a stěnách, odlesk na podlaze a svítí na stěny; když vyleze před zeď,
-přeroste svítící rám otvoru a osvítí zeď kolem. Iluze je nejsilnější z místa, kde stojí publikum — nastav v záložce **3D okno**
-`Výška očí diváka` (0 = oči ve výšce středu obrazu, záporné = níž) a `Vzdálenost diváka` (v násobcích výšky obrazu na zdi).
-Dále hloubka a velikost výklenku, jak moc objekt vylézá, svítící hrany, mřížka, stín, odlesk a světlo objektu na zeď.
-Výklenek (krychle s mřížkou) je ve výchozím stavu vypnutý: objekt pak visí před zdí, zeď za ním je jemně osvětlená a nese jeho stín,
-který se s hloubkou vzdaluje a měkne. Zapíná se přepínačem `Výklenek`.
-Žádný automatický režisér — scény vypadají pořád stejně a reagují jen na hudbu.
-
-## Scéna Pták
-Racek ze stock videa vyříznutý z oblohy krouží ve 3D okně a s energií hudby z něj vylétá před zeď.
-Styl ze čtyř vrstev: šedé tělo s bílým obrysem, tyrkysové světelné stopy za pohybem, červeno-oranžový barevný lem a rastr z teček.
-Kopák = máchnutí křídly, záblesk obrysu a postrčení z okna; virbl a hi-haty = rastr z teček a lem.
-Výsledek se převádí **na znaky jako Kytice a Květ** (styl a velikost znaků podle hlasitosti ze záložky Kytice; ve stylu Body je pták jako dřív).
-Záložka **Pták**: síla máchnutí, světelné stopy, barevný lem, rastr z teček, rychlost videa, velikost ptáka, jas.
+## Scéna Křídla (klávesa 5, místo Ptáka)
+Abstraktní pár křídel z peří v **barvách termokamery**: čím rychleji se část křídla pohybuje, tím je „teplejší“
+(fialová → červená → oranžová → žlutá → bílá). Křídla plynule **mávají nahoru a dolů v tempu** (jedno mávnutí za 2 doby,
+s energií výš), špičky se při pohybu opožďují a ohýbají jako u skutečného křídla; kopák je krátce rozžhaví, drop přinese velké mávnutí.
+Za křídly zůstávají **stíny, které se rozlévají do krajů** a chladnou do fialové. V pozadí **skutečné hejno špačků** z videa
+(murmurace): ptáci jsou teplé tečky, jejich stopy chladnou; nad hustým hejnem křídla září víc (nasávají jeho světlo).
+Každé pero září podle svého frekvenčního pásma.
+Záložka **Křídla**: rozpětí, síla mávání, teplo (barvy), jas hejna, nasávání světla z hejna, stíny do krajů, rychlost videa, jas křídel.
 
 ## Scéna Květ
 Velká **lilie** ze svítících bodů (a za ní šest menších lilií ve stejném úhlu, rozmazané do hloubky; na každou dobu se rozsvítí jedna z nich, střídavě vlevo a vpravo, jako světla na DJ decku) ve stylu Kytice (znaky / písmena / body, barvy podle hudby; posuvníky v záložce Kytice
@@ -89,7 +81,7 @@ Pohyb je organický a plynulý: vítr kývá květy na stoncích, po lístcích 
 Kopák pošle po lístcích vlnu světla od středu ke špičkám — vždy proběhne celou kytici a plynule dozní (i krátký tón), další vlna přijde, až ta předchozí doběhne; lilie se rozzáří spolu s vlnou, každá květina poslouchá své frekvenční pásmo,
 lilie mění barvy podle hudby (korálová ↔ růžová ↔ fialová), rozjezd písničky kytici rozpohybuje a drop ji rozvlní; lístky zůstávají čisté (bez rozpadu do mlhy).
 Záložka **Kytice**: **limit kývání** (jak daleko se smí květy ve větru vychýlit; 0 = stojí, 1 = výchozí), citlivost rozkvětu, vlna kopáku, hloubka ostrosti, pohyb kamery, velikost bodů, jas,
-sytost barev, měnění barev lilií, **Styl** (ASCII znaky / Písmena / Body — platí pro Kytici, Květ i Ptáka), velikost znaků
+sytost barev, měnění barev lilií, **Styl** (ASCII znaky / Písmena / Body — platí pro Kytici a Květ), velikost znaků
 (znaky rostou s hlasitostí).
 
 ## Pro úpravy

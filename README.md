@@ -27,7 +27,7 @@ git clone https://github.com/pachmannj/mapping.git
 4. Výstup na projektor: klávesa **O**. Mapování: klávesa **T** a záložka Mapping (viz `show/NÁVOD.md`).
 
 ## Média
-- `show/media/seagull_45246.mp4` — „Seagull glides through the blue sky“, [Mixkit](https://mixkit.co/free-stock-video/seagull-glides-through-the-blue-sky-45246/) (Mixkit Stock Video Free License).
+- `show/media/murmuration_3851642.mp4` — „Flock Of Birds In A Murmuration Flight“, Egor Kunovsky, [Pexels](https://www.pexels.com/video/flock-of-birds-in-a-murmuration-flight-3851642/) (Pexels License, zdarma i komerčně).
 
 ## Poznámky
 - Výstup je 1280×720 (omezení licence Non-Commercial), projektor si obraz zvětší.

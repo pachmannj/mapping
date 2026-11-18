@@ -154,44 +154,34 @@ def build_heat(SH):
 
 # ───────────────────────── PTÁK ─────────────────────────
 def build_bird(SH):
+	"""KŘÍDLA (místo Ptáka): abstraktní mávající křídla v barvách termokamery, stíny rozlévající se do krajů,
+	v pozadí skutečné hejno špačků z videa (Pexels 3851642)."""
 	Bc = mk(SH, baseCOMP, 'bird', -1100, -600)
 	vid = mk(Bc, moviefileinTOP, 'video', -900, 0)
-	vid.par.file = 'media/seagull_45246.mp4'                         # relativně ke složce show
-	setp(vid, 'playmode', 'sequential'); setp(vid, 'play', True); setp(vid, 'interp', True)
-	setp(vid, 'loopcrossfadeunit', 'seconds'); setp(vid, 'loopcrossfade', 1.5)      # konec smyčky se prolne se začátkem
-	key = glsl(Bc, 'key', 'bird_key.glsl', -700, 0, ['uK0'], (vid,))
-	for n, v in (('vec0valuex', .05), ('vec0valuey', .15), ('vec0valuez', 1)): setp(key, n, v)
-	small = mk(Bc, resolutionTOP, 'mask_small', -700, -200, (key,)); custom_res(small, 64, 36)
-	flap = glsl(Bc, 'flap', 'bird_flap.glsl', -500, 0, ['uF0', 'uF1'], (key,))
-	for n, v in (('vec0valuex', .5), ('vec0valuey', .5), ('vec0valuez', 1), ('vec1valuey', .05), ('vec1valuez', .3), ('vec1valuew', 1.78)): setp(flap, n, v)
-	ctr = mk(Bc, transformTOP, 'center', -300, 0, (flap,)); setp(ctr, 'extend', 'zero')     # pták doprostřed karty
-	sm = mk(Bc, resolutionTOP, 'bird_sm', -100, 0, (ctr,)); custom_res(sm, 960, 540); setp(sm, 'format', 'rgba16float')
-	zero = mk(Bc, constantTOP, 'reel_zero', -100, -250); custom_res(zero, 960, 540); setp(zero, 'format', 'rgba16float')
-	for n in ('colorr', 'colorg', 'colorb'): setp(zero, n, 0)
-	fb = mk(Bc, feedbackTOP, 'reel_fb', 100, -250, (zero,))
-	reel = glsl(Bc, 'reel', 'bird_reel.glsl', 300, 0, ['uR0', 'uR1', 'uR2'], (fb, sm))
-	setp(reel, 'numcolorbufs', 2); fb.par.top = reel
-	for n, v in (('vec0valuex', -2), ('vec0valuey', -1), ('vec0valuez', .9), ('vec0valuew', 1), ('vec1valuex', 6), ('vec1valuey', 1),
-	             ('vec1valuew', 6), ('vec2valuex', 1), ('vec2valuey', 1)): setp(reel, n, v)
-	col = mk(Bc, renderselectTOP, 'reel_col', 500, 0); col.par.top = reel; setp(col, 'bufferindex', 1); setp(col, 'format', 'rgba16float')
-	win = window3d(Bc, col, 700, 0)
-	# znaky jako v Kytici a Květu (styl, velikost podle tempa a pulz na beat ze záložky Kytice)
-	gl = mk(Bc, moviefileinTOP, 'glyphs', 900, -200); gl.par.file = 'media/glyphs.png'
-	asc = glsl(Bc, 'ascii', 'bouquet_ascii.glsl', 1000, 0, ['uS0', 'uS1'], (win, gl))
-	for n_, v_ in (('vec0valuex', 9), ('vec0valuey', 1), ('vec0valuez', 1.6), ('vec1valuez', 1)): setp(asc, n_, v_)
-	glow = bloom(Bc, asc, 1200, 0, "0.5")
-	mk(Bc, nullTOP, 'out1', 1800, 0, (glow,))
+	vid.par.file = 'media/murmuration_3851642.mp4'                    # relativně ke složce show
+	setp(vid, 'playmode', 'sequential'); setp(vid, 'play', True)
+	setp(vid, 'loopcrossfadeunit', 'seconds'); setp(vid, 'loopcrossfade', 1.0)
+	sm = mk(Bc, resolutionTOP, 'video_sm', -700, 0, (vid,)); custom_res(sm, 960, 540)
+	dk = glsl(Bc, 'dark', 'wings_dark.glsl', -500, 0, [], (sm,)); setp(dk, 'format', 'rgba8fixed')
+	db = mk(Bc, blurTOP, 'dark_blur', -300, -150, (dk,)); setp(db, 'size', 24)
+	fz = mk(Bc, constantTOP, 'flock_zero', -300, -300); custom_res(fz, 960, 540); setp(fz, 'format', 'rgba16float')
+	for n in ('colorr', 'colorg', 'colorb'): setp(fz, n, 0)
+	ffb = mk(Bc, feedbackTOP, 'flock_fb', -100, -300, (fz,))
+	flock = glsl(Bc, 'flock', 'wings_flock.glsl', 100, 0, ['uF0'], (dk, db, ffb))
+	ffb.par.top = flock
+	setp(flock, 'vec0valuex', .9); setp(flock, 'vec0valuey', 1)
+	w = glsl(Bc, 'wings', 'wings.glsl', 300, 0, ['uW0', 'uW1', 'uW2', 'uL0', 'uL1', 'uL2'], (flock,), custom_res=True)
+	for n_, v_ in (('vec1valuex', 1.78), ('vec1valuey', 1), ('vec1valuew', 1), ('vec2valuew', 1)): setp(w, n_, v_)
+	sz = mk(Bc, constantTOP, 'spill_zero', 300, -300); setp(sz, 'format', 'rgba16float'); res(sz)
+	for n in ('colorr', 'colorg', 'colorb'): setp(sz, n, 0)
+	sfb = mk(Bc, feedbackTOP, 'spill_fb', 500, -300, (sz,))
+	sp = glsl(Bc, 'spill', 'wings_spill.glsl', 700, 0, ['uS0'], (sfb, w), custom_res=True)
+	sfb.par.top = sp
+	setp(sp, 'vec0valuex', .9); setp(sp, 'vec0valuey', .004); setp(sp, 'vec0valuew', 1.78)
+	glow = bloom(Bc, sp, 900, 0, "0.7")
+	mk(Bc, nullTOP, 'out1', 1500, 0, (glow,))
 
 # ───────────────────────── KVĚT (skutečná lilie) ─────────────────────────
-def window3d(parent, obj, x, y):
-	"""3D okno ve zdi (src/glsl/window3d.glsl): objekt jako karta v anamorfním výklenku; ovládá ho modul scény"""
-	ob = mk(parent, blurTOP, 'obj_blur', x, y - 200, (obj,)); setp(ob, 'size', 20)
-	w = glsl(parent, 'window', 'window3d.glsl', x + 200, y, ['uW0', 'uW1', 'uW2', 'uW3', 'uW4', 'uW5', 'uW6'], (obj, ob), custom_res=True)
-	for n_, v_ in (('vec0valuez', 3), ('vec0valuew', 1.78), ('vec1valuex', .84), ('vec1valuey', .62), ('vec1valuez', 1.2), ('vec1valuew', 1),
-	               ('vec2valuez', -.5), ('vec2valuew', .5), ('vec3valuex', 1), ('vec3valuez', 1.5), ('vec3valuew', 1.5), ('vec5valuez', 1), ('vec6valuez', 1)):
-		setp(w, n_, v_)                                                  # bezpečné výchozí hodnoty (žádné dělení nulou)
-	return w
-
 def build_flower(SH):
 	"""KVĚT: jedna květina, která se podle beatu proměňuje v další druhy — stejná síť jako Kytice (sc_flower.py → sc_bouquet.run)"""
 	build_bouquet(SH, 'flower', -1100, -750, ty=.1)

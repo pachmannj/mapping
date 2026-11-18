@@ -1,12 +1,11 @@
-# SCÉNA PTÁK — racek ze stock videa (Mixkit 45246, volná licence) vyříznutý z oblohy, ve 3D okně ve zdi
-# (anamorfní iluze jako billboardy v New Yorku): krouží ve výklenku a s hudbou z něj vylétá před zeď.
-# Styl ze čtyř vrstev: šedé tělo s bílým obrysem, tyrkysové světelné stopy, červeno-oranžový barevný lem, rastr z teček.
-#   kopák   → máchnutí křídly + bílý záblesk obrysu, postrčí ptáka dopředu z okna
-#   energie / hutnost → jak daleko z okna vylétá, délka stop
-#   virbl a hi-haty → rastr z teček (halftone) a barevný lem
-# Výsledek se převede na znaky jako Kytice a Květ (styl, velikost podle tempa a pulz na beat ze záložky Kytice).
-import math, random
-import numpy as np
+# SCÉNA KŘÍDLA (místo Ptáka) — abstraktní pár křídel z peří v barvách termokamery, stíny se rozlévají do krajů,
+# v pozadí skutečné hejno špačků z videa (Pexels 3851642, Egor Kunovsky), ptáci teplí, jejich stopy chladnou.
+#   tempo   → mávání: jeden plynulý mávnutí nahoru a dolů za 2 doby (rychlá písnička = rychlé mávání)
+#   energie → výška mávnutí a „teplo“ (rychle se pohybující části křídla se rozžhaví do žluta a bíla)
+#   kopák   → krátké rozžhavení křídel; drop → velké mávnutí
+#   hutnost → stíny se rozlévají dál; video hejna plyne rychleji s energií
+#   pásma   → každé pero září podle svého pásma
+import math
 
 SHOW = '/project1/show'
 Bd = '/project1/show/bird'
@@ -25,113 +24,47 @@ def setv(o, i, v):
 	getattr(p, 'vec%dvaluex' % i).val, getattr(p, 'vec%dvaluey' % i).val = num(v[0]), num(v[1])
 	getattr(p, 'vec%dvaluez' % i).val, getattr(p, 'vec%dvaluew' % i).val = num(v[2]), num(v[3])
 
-def reset():
-	S.clear()
-	S.update(dict(vt=0.0, cx=.5, cy=.5, ux=1.0, uy=0.0, span=.3, phase=1.0, flapRate=1.5, idle=1.5, t=0.0, beats=0,
-		z=-.6, zv=0.0, path=0.0, px=0.0, py=0.0, half=0.0, fr=0.0, hue=0.0))
-
-def window(w, A, on, obj, edgePulse, hue, wall=1.0, wallY=0.0):
-	"""společné nastavení 3D okna (stejné jako v sc_flower.py); obj = (x, y, z, poloviční výška karty, poměr stran)"""
-	asp = w.width / max(1, w.height)
-	H = P('Wsize'); W = min(asp * .92, H * 1.5); oy = -.08
-	setv(w, 0, (0, P('Weye'), P('Wdist') * 2, asp))
-	setv(w, 1, (W, H, P('Wdepth'), P('Wedges') * (.35 + A['energy'] * .4 * on)))
-	setv(w, 2, obj[:4])
-	setv(w, 3, (obj[4], .4, oy + H + .7, 1.6))
-	setv(w, 4, (hue, P('Wgrid'), P('Wrefl'), P('Wshadow')))
-	setv(w, 5, (edgePulse, P('Wlight'), 1.0, oy))
-	setv(w, 6, (1 if P('Wbox') else 0, P('Wwall') * wall, 1.15, wallY))
-	return H, oy
-
-def track(asp):
-	"""střed těla a osa rozpětí z masky (64×36 px, levné čtení z GPU)"""
-	a = k('mask_small').numpyArray()
-	if a is None or a.size == 0: return
-	m = a[:, :, 3].astype(np.float64)
-	tot = m.sum()
-	if tot < 1.0: return
-	h, w = m.shape
-	ys, xs = np.mgrid[0:h, 0:w]
-	u = (xs + .5) / w; v = (ys + .5) / h
-	cx = float((m * u).sum() / tot); cy = float((m * v).sum() / tot)
-	dx = (u - cx) * asp; dy = v - cy
-	cxx = float((m * dx * dx).sum() / tot); cyy = float((m * dy * dy).sum() / tot); cxy = float((m * dx * dy).sum() / tot)
-	ang = .5 * math.atan2(2 * cxy, cxx - cyy)              # hlavní osa = rozpětí křídel
-	ux, uy = math.cos(ang), math.sin(ang)
-	if ux * S['ux'] + uy * S['uy'] < 0: ux, uy = -ux, -uy  # bez přeskakování směru o 180°
-	span = 2.0 * math.sqrt(max(cxx * ux * ux + 2 * cxy * ux * uy + cyy * uy * uy, 1e-6)) * 1.6
-	f = .15
-	S['cx'] += (cx - S['cx']) * f; S['cy'] += (cy - S['cy']) * f
-	S['ux'] += (ux - S['ux']) * f; S['uy'] += (uy - S['uy']) * f
-	S['span'] += (span - S['span']) * f
+def lp(key, x, dt, up=3.0, down=None):
+	"""plynulé sledování hodnoty (náběh / doběh za sekundu)"""
+	v = S.setdefault(key, x)
+	r = up if x > v else (down if down is not None else up)
+	S[key] = v + (x - v) * (1 - math.exp(-dt * r))
+	return S[key]
 
 def update(A, dt, now):
-	if not S: reset()
-	on = A['on']; R = P('Reactivity'); b = A['bands']; B = A['busy'] if on else 0
+	S.setdefault('t', 0.0); S.setdefault('fp', 0.0)
+	on = A['on']; R = P('Reactivity'); B = A['busy'] if on else 0; e = A['energy']
 	S['t'] += dt
-	asp = 16 / 9
-	# ── video plyne plynule (přeskakování na čas by každý snímek dekódovalo H.264 od klíčového snímku → 20 fps), s energií rychleji ──
-	k('video').par.speed = P('Bspeed') * (.35 + (A['energy'] * .4 + B * .3) * on)
-	track(asp)
-	# ── máchnutí: každý kopák spustí jeden mávnutí; rychlost podle tempa ──
-	if A['kickHit'] and on:
-		S['phase'] = 0.0; S['beats'] += 1
-		S['flapRate'] = max(1.2, min(3.5, (A['bpm'] / 60.0) * 1.1)) if A['bpm'] else 2.0
-	elif not on:
-		S['idle'] -= dt
-		if S['idle'] <= 0: S['phase'] = 0.0; S['flapRate'] = 1.2; S['idle'] = random.uniform(1.8, 3.2)
-	S['phase'] = min(1.0, S['phase'] + dt * S['flapRate'])
-	ph = S['phase']
-	amp = P('Bflap') * (.45 + (A['kickEnv'] * .35 + b['low'] * .2) * R * on) if on else .4 * P('Bflap')
-	glide = math.sin(S['t'] * .7) * .05                    # klidné plachtění mezi mávnutími
-	flap = (math.cos(ph * 2 * math.pi) * amp if ph < 1.0 else 0.0) * (1 - ph * .3) + glide
-	setv(k('flap'), 0, (S['cx'], S['cy'], S['ux'], S['uy']))
-	setv(k('flap'), 1, (flap, S['span'] * .16, S['span'], asp))
-	setv(k('key'), 0, (.05, .15, 1.0, 0))
-	ce = k('center').par
-	ce.tx, ce.ty = .5 - S['cx'], .5 - S['cy']
-	# ── let v prostoru: krouží ve výklenku (osmička), s energií vylétá z okna, kopák ho postrčí dopředu ──
-	tempo = A['tempo'] if (on and A['bpm']) else 1
-	S['path'] += dt * (.25 + (A['energy'] * .3 + B * .3) * on) * tempo
-	D = P('Wdepth'); pop = P('Wpop'); H = P('Wsize')
-	zt = -D * .55 + (A['energy'] * .7 + B * .7 + .15 * on) * pop * (D * .55 + .8)
-	S['zv'] += ((zt - S['z']) * 4.0 - S['zv'] * 3.5) * dt + A['kickHit'] * .4 * R * pop * on
-	S['z'] += S['zv'] * dt
-	tx = math.sin(S['path']) * H * .55; ty = math.sin(S['path'] * 2) * H * .22 - .05
-	vx = (tx - S['px']) / max(dt, 1e-3); vy = (ty - S['py']) / max(dt, 1e-3)
-	S['px'], S['py'] = tx, ty
-	hh = .9 * P('Bsize') * H
-	# ── styl: stopy za pohybem (proti směru letu), lem a rastr podle virblu a hi-hatů ──
-	if A['snareHit'] and on: S['half'] = max(S['half'], .6 + A['snareHit'] * .6)
-	S['half'] *= math.exp(-dt * 2.5)
-	S['fr'] += ((.4 + A['hatEnv'] * 1.2 + b['air'] * .5) * on - S['fr']) * (1 - math.exp(-dt * 8))
-	S['hue'] += dt * (.005 + A['centroid'] * .02 * on)
-	tr = P('Btrails')
-	dx, dy = -vx * 60 - 1.5, -vy * 60 - .8                  # px za snímek ve 960×540
-	sp = math.hypot(dx, dy); mx = 4 + B * 4
-	if sp > mx: dx, dy = dx / sp * mx, dy / sp * mx
-	setv(k('reel'), 0, (dx, dy, min(.97, .8 + tr * .15 + B * .03), tr * (1.0 + A['kickEnv'] * .8 * on)))
-	setv(k('reel'), 1, (5 + 6 * S['fr'], P('Bfringe') * (.5 + S['fr']), min(1.0, P('Bhalftone') * (S['half'] + B * .35 * on)), 6))
-	setv(k('reel'), 2, (P('Bbright') * .8, P('Bbright'), math.sin(S['hue'] * 6.28) * .06, A['kickEnv'] * .8 * on))
-	chars = P('Qstyle') != 'points'
-	w = k('window')
-	window(w, A, on, (tx, ty, S['z'], hh, asp), A['kickEnv'] * on, .5 + S['hue'], 0.0 if chars else 1.0)
-	if chars: w.par.vec5valuey = 0                     # ve znacích bez světla na zdi (jinak by znaky zaplnily celý obraz)
-	ascii_pass(A, dt, on, R)
+	eS = lp('eS', e * on, dt, 3.0, 1.0); bS = lp('bS', B, dt, 1.5, .6)
+	bpm = lp('bpm', A['bpm'] if (on and A['bpm']) else 90.0, dt, .8)
+	# drop: energie vyskočí nad dlouhodobý průměr → velké mávnutí, které pomalu dozní
+	eL = lp('eL', eS, dt, .1)
+	if on and eS - eL > .14 and eS > .45 and now - S.get('lastDrop', -99) > 8: S['lastDrop'] = now; S['surgeT'] = 1.0
+	S['surgeT'] = S.get('surgeT', 0.0) * math.exp(-dt / 4.0)
+	surge = lp('surge', S['surgeT'], dt, 2.5, 2.0)
+	# mávání: fáze běží plynule podle tempa (jeden mávnutí za 2 doby); každý kopák fázi jemně doladí na úder
+	S['fp'] += dt * bpm / 60.0 / 2.0
+	if on and A['kickHit']:
+		fr = (S['fp'] * 2.0) % 1.0
+		S['corr'] = (-fr if fr < .5 else 1.0 - fr) * .5 / 2.0
+	c_ = S.get('corr', 0.0) * min(1.0, dt * 2.0); S['fp'] += c_; S['corr'] = S.get('corr', 0.0) - c_
+	amp = lp('amp', (.35 + eS * .45 + surge * .4) * P('Bflap') * (R if on else .6), dt, 2.0, .8)
+	ph = S['fp'] * 2 * math.pi
+	ang = .18 + math.sin(ph) * amp                       # úhel křídla (nahoře + / dole −), plynulá sinusovka
+	vel = math.cos(ph) * min(1.0, amp * 1.6)              # rychlost mávání (pro ohyb per a „teplo“)
+	kick = lp('kick', A['kickEnv'] * on * R, dt, 20.0, 5.0)
+	heat = (.5 + eS * .8 + surge * .6) * P('Bheat')
+	w = k('wings')
+	asp = w.width / max(1, w.height)
+	setv(w, 0, (S['t'], ang, vel, heat))
+	setv(w, 1, (asp, P('Bspan') * (1 + surge * .1), P('Babsorb') * .6, P('Bflock') * .28))
+	setv(w, 2, (-.02 + math.sin(ph + .6) * .03 * amp, kick, math.sin(S['t'] * .05) * .5, P('Bbright')))
+	lob = A['LOB'] if on else [.4] * 12
+	for i in range(3): setv(w, 3 + i, tuple(lob[4 * i:4 * i + 4]))
+	# stíny do krajů: s hutností se rozlévají dál a déle doznívají
+	setv(k('spill'), 0, (min(.94, .84 + bS * .07 + surge * .03) if P('Bspill') > 0 else 0, .003 + (bS * .006 + eS * .004) * P('Bspill'), S['t'], asp))
+	# hejno: video plyne rychleji s energií, stopy ptáků chladnou pomaleji s hutností
+	k('video').par.speed = P('Bspeed') * (.6 + eS * .6 + surge * .4) if on else .5 * P('Bspeed')
+	setv(k('flock'), 0, (min(.85, .65 + bS * .15), 1.0, 0, 0))
 
-def ascii_pass(A, dt, on, R):
-	"""znaky jako v Kytici: velikost podle hlasitosti (hlasitější = větší)"""
-	def lp(key, x, rate):
-		v = S.setdefault(key, x); S[key] = v + (x - v) * (1 - math.exp(-dt * rate)); return S[key]
-	bpm = A['bpm'] if (on and A['bpm']) else 100.0
-	# velikost znaků = jen hlasitost (jako Kytice a Květ)
-	loud = S.setdefault('aLoud', 0.0); e = A['energy'] * on
-	S['aLoud'] = loud + (e - loud) * (1 - math.exp(-dt * (30.0 if e > loud else 8.0)))
-	cell = 6.0 + S['aLoud'] * 14.0 * P('Qcellbeat')
-	cp = 0.0
-	sty = {'points': 0, 'ascii': 1, 'letters': 2}.get(P('Qstyle'), 1)
-	scr = cp * .25 * R
-	setv(k('ascii'), 0, (cell * P('Qcell') / 9.0, sty, 2.1, 0))
-	setv(k('ascii'), 1, (S['t'], min(.8, scr), P('Qcolor'), 0))
-
-def look_name(): return 'okno'
+def look_name(): return 'křídla'
